@@ -2,6 +2,7 @@
 #include <limits> 
 #include <queue>
 #include <fstream>
+#include <filesystem>
 
 void graph::add_edge(int u,int v,int w){
     adjlist[u].push_back({v,w});
@@ -42,6 +43,9 @@ unordered_map<int, int> graph::dijkstra(int source){
         //int node = current.second; //current.second is the node.
         //list<pair<int,int>> neighbors = this->adjlist[node];
 
+        if (current.first > distances[current.second]) continue; // skip stale entry
+
+
         for(auto neighbor : this->adjlist[current.second]){
             //pq.push({neighbor.second, neighbor.first});
             int newDistance = distances[current.second] + neighbor.second;
@@ -55,7 +59,8 @@ unordered_map<int, int> graph::dijkstra(int source){
 }
 
 void graph::export_dot() {
-    ofstream outFile("graph.dot");
+    ofstream outFile("graph.dot", std::ios::out | std::ios::trunc);
+    //cout << "export_dot() called, writing to: " << filesystem::current_path() << "/graph.dot" << endl;
 
     outFile << "graph G {\n";
     for (auto i : adjlist) {
