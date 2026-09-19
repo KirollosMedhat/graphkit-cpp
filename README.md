@@ -8,9 +8,6 @@ A C++ graph library built from scratch, implementing common graph algorithms on 
 - Export to Graphviz `.dot` format for visualization
 - More algorithms (BFS, DFS, MST, etc.) planned
 
-## Why
-This project is part of my transition from support engineering into software engineering — a hands-on way to build and deeply understand core data structures and graph algorithms in C++.
-
 ## Usage
 \`\`\`cpp
 graph g;
