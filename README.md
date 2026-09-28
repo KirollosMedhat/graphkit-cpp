@@ -9,7 +9,7 @@ A C++ graph library built from scratch, implementing common graph algorithms on 
 - More algorithms (BFS, DFS, MST, etc.) planned
 
 ## Usage
-\`\`\`cpp
+```cpp
 graph g;
 g.add_edge(1, 2, 7);
 g.add_edge(2, 3, 5);
@@ -20,7 +20,7 @@ for (auto& [node, dist] : distances) {
 }
 
 g.export_dot(); // writes graph.dot, viewable with Graphviz
-\`\`\`
+```
 
 ## Roadmap
 - [x] Weighted graph + adjacency list
