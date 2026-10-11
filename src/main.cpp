@@ -12,7 +12,7 @@ int main() {
 
     g.add_edge(1, 46, 10);
     g.add_edge(1, 25, 12);
-    g.add_edge(1, 55, 1);
+    g.add_edge(1, 55);
     g.add_edge(46, 13, 13);
     g.add_edge(25, 18, 2);
     g.add_edge(46, 22, 14);
@@ -65,7 +65,7 @@ int main() {
     g.add_edge(47, 16, 6);
     g.add_edge(56, 17, 5);
     g.add_edge(2, 19, 3);
-    g.add_edge(27, 49, 1);
+    g.add_edge(27, 49);
     g.add_edge(7, 3, 15);
     g.add_edge(7, 9, 5);
     g.add_edge(30, 42, 13);
@@ -95,11 +95,16 @@ int main() {
     g.add_edge(42, 24, 8);
     g.add_edge(58, 34, 8);
     g.add_edge(8, 16, 4);
-    g.add_edge(5, 22, 1);
+    g.add_edge(5, 22);
     g.add_edge(38, 36, 4);
-    g.add_edge(38, 15, 1);
+    g.add_edge(38, 15);
     g.add_edge(5, 46, 11);
     g.add_edge(4, 15, 2);
+    
+    // g.add_edge(1, 2);
+    // g.add_edge(1, 3);
+    // g.add_edge(3, 4);
+    // g.add_edge(3, 2);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto distances = g.dijkstra(1);
@@ -107,19 +112,31 @@ int main() {
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-    
+    cout << endl << "DFS: ";
+    vector<int> path = g.dfs(1);
+    for( auto i : path){
+        cout<< i << " -> ";
+    }
+    cout<< "END" << endl;
 
-    cout << "Shortest distances from node 1:\n";
+
+    cout << endl << "BFS: ";
+    vector<int> path2 = g.bfs(1);
+    for( auto i : path2){
+        cout<< i << " -> ";
+    }
+    cout<< "END" << endl;
+
+    cout << "\nShortest distances from node 1:\n";
 
     for (auto [node, distance] : distances) {
         cout << "1 -> " << node << " = " << distance << endl;
     }
 
-    std::cout << "Time taken by code: " << duration.count() << " microseconds" << std::endl;
+    cout << "\nTime taken by code: " << duration.count() << " microseconds\n" << endl;
 
-    // cout << "==========================" <<endl;
     // g.print();
-    g.export_dot();
+    // g.export_dot();
     return 0;
 }
 
