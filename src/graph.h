@@ -27,4 +27,6 @@ public:
     unordered_map<int, int> dijkstra(int source);
     vector<int> dfs(int start);
     vector<int> bfs(int start);
+    vector<int> path_dfs(int start, int destination);
+    vector<int> path_bfs(int start, int destination);
 };

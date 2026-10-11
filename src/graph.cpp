@@ -5,6 +5,7 @@
 #include <fstream>
 #include <filesystem>
 #include <unordered_set>
+#include <algorithm>
 
 void graph::add_edge(int u,int v,int w){
     adjlist[u].push_back({v,w});
@@ -136,4 +137,89 @@ vector<int> graph::bfs(int start){
         }
     }
     return order;
+}
+
+vector<int> graph::path_dfs(int start, int destination){
+    vector<int> result;
+    if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
+        cout<<"Start or destination node are not in the graph, terminating."<<endl;
+        return result;
+    }
+
+    unordered_set<int> visited;
+    stack<pair<int,int>> st;
+    unordered_map<int,int> parent;
+    st.push({start, -1});                         //-1 for the starting node with no parents.
+
+    while(!st.empty()){
+        auto currentPair = st.top();
+        st.pop();
+
+        if(visited.count(currentPair.first) == 1) continue;
+        parent[currentPair.first] = currentPair.second;
+
+        if(currentPair.first == destination){
+            int next = destination;
+            while (next != start){
+                result.push_back(next);
+                next = parent[next];
+            }
+            result.push_back(start);
+            reverse(result.begin(), result.end());
+            break;
+        }
+
+        auto currentList = adjlist.find(currentPair.first);   // Returns an iterator to the pair whose key is currentNode.
+        visited.insert(currentPair.first);                    // Marked visited.
+
+        for(const auto& neighbors : currentList -> second){
+            if(visited.count(neighbors.first) == 1){
+                continue;
+            }
+            st.push({neighbors.first, currentPair.first});
+        }
+    }
+    return result;
+}
+
+vector<int> graph::path_bfs(int start, int destination){
+    vector<int> result;
+    if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
+        cout<<"Start or destination node are not in the graph, terminating."<<endl;
+        return result;
+    }
+
+    unordered_set<int> visited;
+    queue<pair<int,int>> q;
+    unordered_map<int,int> parent;
+    q.push({start, -1});                         //-1 for the starting node with no parents.
+
+    while(!q.empty()){
+        auto currentPair = q.front();
+        q.pop();
+
+        if(visited.count(currentPair.first) == 1) continue;
+        parent[currentPair.first] = currentPair.second;
+
+        if(currentPair.first == destination){
+            int next = destination;
+            while (next != start){
+                result.push_back(next);
+                next = parent[next];
+            }
+            result.push_back(start);
+            reverse(result.begin(), result.end());
+            break;
+        }
+
+        auto currentList = adjlist.find(currentPair.first);   // Returns an iterator to the pair whose key is currentNode.
+        visited.insert(currentPair.first);                    // Marked visited.
+        for(const auto& neighbors : currentList -> second){
+            if(visited.count(neighbors.first) == 1){
+                continue;
+            }
+            q.push({neighbors.first, currentPair.first});
+        }
+    }
+    return result;
 }
