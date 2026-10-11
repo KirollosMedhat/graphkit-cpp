@@ -29,7 +29,6 @@ std::vector<int> levels = g.bfs(1);  // visit order, nearest nodes first
 
 g.export_dot(); // writes graph.dot, viewable with Graphviz
 ```
-<<<<<<< HEAD
 
 ## Notes
 - `dfs` and `bfs` return the **order in which nodes are visited**, not a route between two nodes. Consecutive entries aren't necessarily connected by an edge.
@@ -81,8 +80,6 @@ g.export_dot(); // writes graph.dot, viewable with Graphviz
 - `dfs` and `bfs` return the **order in which nodes are visited**, not a route between two nodes. Consecutive entries aren't necessarily connected by an edge.
 - Calling `dfs` or `bfs` with a start node that isn't in the graph prints a message and returns an empty vector.
 - In `dijkstra`, nodes that can't be reached from the source keep the value `std::numeric_limits<int>::max()`.
-=======
->>>>>>> 0e449737c836bb662c69e2e3f074b5bb3e988197
 
 ## Roadmap
 - [x] Weighted graph + adjacency list
