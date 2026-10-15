@@ -177,9 +177,6 @@ vector<int> graph::bfs(int start){
         int currentNode = q.front();
         q.pop();
 
-        //if(visited.count(currentNode) == 1) continue;
-        //visited.insert(currentNode);
-
         order.push_back(currentNode);                           
         auto currentList = adjlist.find(currentNode);
 
@@ -272,6 +269,62 @@ vector<int> graph::path_bfs(int start, int destination){
                 continue;
             }
             q.push({neighbors.first, currentPair.first});
+        }
+    }
+    return result;
+}
+
+graph::PathResult graph::path_dijkstra(int start, int destination){
+    PathResult result;                               // Output: best known path from start to destination and it's distance.
+
+    if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
+        cout<<"Start or destination node are not in the graph, terminating."<<endl;
+        return result;
+    }
+    unordered_map<int, int> distances;                 
+    priority_queue<pair<int,int>, vector<pair<int,int>>, greater<pair<int,int>>> pq;        //min-priority Queue.
+    // <Node ID, Parent ID>
+    unordered_map<int,int> parent;
+
+    
+
+    for (const auto& i: adjlist){
+        if(i.first != start){
+            distances[i.first] = numeric_limits<int>::max();
+        }else{
+            // Weight of start is 0 as it is the current node, we are already there.
+            distances[i.first] = 0;
+            pq.push({0,start});
+            parent[start] = -1;                 // -1 is for a node with no parent.
+        }
+    }
+
+    while(!pq.empty()){
+        pair<int,int> current = pq.top();                               // Getting the highest priority node from the queue.
+        pq.pop();                                                       // Removing it from the queue.
+
+        if (current.first > distances[current.second]) continue;
+
+        if(current.second == destination){
+            int next = destination;
+            while (next != start){
+                result.path.push_back(next);
+                next = parent[next];
+            }
+            result.path.push_back(start);
+            reverse(result.path.begin(), result.path.end());
+            result.distance = distances[destination];
+            break;
+
+        }
+
+        for(const auto& neighbor : this->adjlist[current.second]){
+            int newDistance = distances[current.second] + neighbor.second;  
+            if(newDistance < distances[neighbor.first]){
+                distances[neighbor.first] = newDistance;
+                pq.push({distances[neighbor.first], neighbor.first});
+                parent[neighbor.first] = current.second;
+            }
         }
     }
     return result;
