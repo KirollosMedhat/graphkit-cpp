@@ -11,3 +11,6 @@ target_include_directories(Bench PRIVATE src)
 
 add_executable(BenchAStar bench/bench_astar.cpp src/graph.cpp)
 target_include_directories(BenchAStar PRIVATE src)
+
+add_executable(Tests tests/test_graph.cpp src/graph.cpp)
+target_include_directories(Tests PRIVATE src)
