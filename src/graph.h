@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include <limits> 
+#include <functional>
 
 using namespace std;
 
@@ -36,4 +37,5 @@ public:
     vector<int> path_dfs(int start, int destination);
     vector<int> path_bfs(int start, int destination);
     PathResult path_dijkstra(int start, int destination);
+    PathResult path_astar(int start, int destination, std::function<int(int)> heuristic = [](int){ return 0; });
 };

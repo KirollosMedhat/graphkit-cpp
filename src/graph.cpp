@@ -278,7 +278,7 @@ graph::PathResult graph::path_dijkstra(int start, int destination){
     PathResult result;                               // Output: best known path from start to destination and it's distance.
 
     if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
-        cout<<"Start or destination node are not in the graph, terminating."<<endl;
+        cout << "Start or destination node are not in the graph, terminating." << endl;
         return result;
     }
     unordered_map<int, int> distances;                 
@@ -323,6 +323,66 @@ graph::PathResult graph::path_dijkstra(int start, int destination){
             if(newDistance < distances[neighbor.first]){
                 distances[neighbor.first] = newDistance;
                 pq.push({distances[neighbor.first], neighbor.first});
+                parent[neighbor.first] = current.second;
+            }
+        }
+    }
+    return result;
+}
+
+
+graph::PathResult graph::path_astar(int start, int destination, std::function<int(int)> heuristic){
+    PathResult result;                               // Output: best known path from start to destination and it's distance.
+
+    if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
+        cout<<"Start or destination node are not in the graph, terminating."<<endl;
+        return result;
+    }
+
+    unordered_map<int, int> distances;              // This is the g(n).
+
+    // Min-priority queue of {f(n), node ID} pairs. Where where f(n) = g(n) + h(n), 
+    // g(n) is the cost from start to current node and h(n) is the estimate from current node to the destination.
+    priority_queue<pair<int,int>, vector<pair<int,int>>, greater<pair<int,int>>> pq;        //min-priority Queue.
+
+    unordered_map<int,int> parent;
+
+    for (const auto& i: adjlist){
+        if(i.first != start){
+            distances[i.first] = numeric_limits<int>::max();
+        }else{
+            distances[i.first] = 0;
+            pq.push({heuristic(start),start});
+            parent[start] = -1;                 // -1 is for a node with no parent.
+        }
+    }
+
+    while(!pq.empty()){
+        pair<int,int> current = pq.top();
+        pq.pop();
+
+        int f = distances[current.second] + heuristic(current.second);
+        if (current.first > f) continue;
+
+        if(current.second == destination){
+            int next = destination;
+            while (next != start){
+                result.path.push_back(next);
+                next = parent[next];
+            }
+            result.path.push_back(start);
+            reverse(result.path.begin(), result.path.end());
+            result.distance = distances[destination];
+            break;
+        }
+
+        for(const auto& neighbor : this->adjlist[current.second]){
+            int newDistance = distances[current.second] + neighbor.second;
+            if(newDistance < distances[neighbor.first]){
+                int f = newDistance + heuristic(neighbor.first);
+
+                distances[neighbor.first] = newDistance;
+                pq.push({f, neighbor.first});
                 parent[neighbor.first] = current.second;
             }
         }
