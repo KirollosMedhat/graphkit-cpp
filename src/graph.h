@@ -14,6 +14,14 @@ private:
         int targetNode;
         int weight;
     };
+    
+    struct QueueEntry {
+        int priority; 
+        int node; 
+
+        auto operator<=>(const QueueEntry&) const = default;            //std::strong_ordering
+    };
+
     unordered_map<int, list<Edge>> adjlist;
 
 public:
