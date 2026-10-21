@@ -10,7 +10,11 @@ using namespace std;
 
 class graph{
 private:
-    unordered_map<int, list<pair<int,int>>> adjlist;
+    struct Edge {
+        int to;
+        int weight;
+    };
+    unordered_map<int, list<Edge>> adjlist;
 
 public:
 
