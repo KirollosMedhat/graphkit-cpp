@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(GraphKit src/main.cpp src/graph.cpp)
 
-add_executable(Bench bench/bench_dijkstra.cpp src/graph.cpp)
-target_include_directories(Bench PRIVATE src)
+add_executable(BenchDijkstra bench/bench_dijkstra.cpp src/graph.cpp)
+target_include_directories(BenchDijkstra PRIVATE src)
 
 add_executable(BenchAStar bench/bench_astar.cpp src/graph.cpp)
 target_include_directories(BenchAStar PRIVATE src)
