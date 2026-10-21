@@ -11,7 +11,7 @@ using namespace std;
 class graph{
 private:
     struct Edge {
-        int to;
+        int targetNode;
         int weight;
     };
     unordered_map<int, list<Edge>> adjlist;

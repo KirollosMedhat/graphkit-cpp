@@ -17,7 +17,7 @@ void graph::print(){
         cout << i.first << " -> ";
 
         for(const auto& k:i.second){
-            cout << "(" << k.first << ", " << k.second << ") ";
+            cout << "(" << k.targetNode << ", " << k.weight << ") ";
         }
         cout << endl;
 
@@ -77,17 +77,17 @@ unordered_map<int, int> graph::dijkstra(int source){
             
             // Distances[current.second] is the known distance calculated to the current node,
             // Adding to it neighbor.second which the weight of the edge between current node and the neighbor we are currently processing.
-            int newDistance = distances[current.second] + neighbor.second;  
+            int newDistance = distances[current.second] + neighbor.weight;  
             
             // Checking if the calculated distance is less than the previously recorded and assigning the smaller.
 
             // Only if this route beats the best known one: record it and queue the
             // neighbor with its improved distance. Any older entry for the neighbor
             // is now stale.
-            if(newDistance < distances[neighbor.first]){
-                distances[neighbor.first] = newDistance;
+            if(newDistance < distances[neighbor.targetNode]){
+                distances[neighbor.targetNode] = newDistance;
                 // Pushing all discovered neighbors with their new weights into the priority queue.
-                pq.push({distances[neighbor.first], neighbor.first});
+                pq.push({distances[neighbor.targetNode], neighbor.targetNode});
             }
         }
     }
@@ -101,8 +101,8 @@ void graph::export_dot() {
     outFile << "graph G {\n";
     for (auto i : adjlist) {
         for(auto k : i.second){
-            if (i.first < k.first) {
-                outFile << i.first << " -- " << k.first << " [label=\"" << k.second << "\"];\n";
+            if (i.first < k.targetNode) {
+                outFile << i.first << " -- " << k.targetNode << " [label=\"" << k.weight << "\"];\n";
             }
         }
     }
@@ -151,12 +151,12 @@ vector<int> graph::dfs(int start){
             // Skip neighbors that are already processed. This is only an optimization.
             // It can't catch a neighbor that is queued but not yet processed, which is
             // what the pop-time check above is for.
-            if(visited.count(neighbors.first) == 1){
+            if(visited.count(neighbors.targetNode) == 1){
                 continue;
             }
             // The last neighbor pushed is popped first, which is why DFS goes
             // deep before it backtracks to the earlier neighbors.
-            st.push(neighbors.first);
+            st.push(neighbors.targetNode);
         }
     }
     return order;
@@ -181,9 +181,9 @@ vector<int> graph::bfs(int start){
         auto currentList = adjlist.find(currentNode);
 
         for(const auto& neighbor : currentList -> second){
-            if(visited.count(neighbor.first) == 1) continue;
-            q.push(neighbor.first);
-            visited.insert(neighbor.first);                         //Mark visited on discovery, so a node is queued only once. Differs from the DFS.
+            if(visited.count(neighbor.targetNode) == 1) continue;
+            q.push(neighbor.targetNode);
+            visited.insert(neighbor.targetNode);                         //Mark visited on discovery, so a node is queued only once. Differs from the DFS.
         }
     }
     return order;
@@ -223,10 +223,10 @@ vector<int> graph::path_dfs(int start, int destination){
         visited.insert(currentPair.first);                    // Marked visited.
 
         for(const auto& neighbors : currentList -> second){
-            if(visited.count(neighbors.first) == 1){
+            if(visited.count(neighbors.targetNode) == 1){
                 continue;
             }
-            st.push({neighbors.first, currentPair.first});
+            st.push({neighbors.targetNode, currentPair.first});
         }
     }
     return result;
@@ -265,10 +265,10 @@ vector<int> graph::path_bfs(int start, int destination){
         auto currentList = adjlist.find(currentPair.first);   // Returns an iterator to the pair whose key is currentNode.
         visited.insert(currentPair.first);                    // Marked visited.
         for(const auto& neighbors : currentList -> second){
-            if(visited.count(neighbors.first) == 1){
+            if(visited.count(neighbors.targetNode) == 1){
                 continue;
             }
-            q.push({neighbors.first, currentPair.first});
+            q.push({neighbors.targetNode, currentPair.first});
         }
     }
     return result;
@@ -319,11 +319,11 @@ graph::PathResult graph::path_dijkstra(int start, int destination){
         }
 
         for(const auto& neighbor : this->adjlist[current.second]){
-            int newDistance = distances[current.second] + neighbor.second;  
-            if(newDistance < distances[neighbor.first]){
-                distances[neighbor.first] = newDistance;
-                pq.push({distances[neighbor.first], neighbor.first});
-                parent[neighbor.first] = current.second;
+            int newDistance = distances[current.second] + neighbor.weight;  
+            if(newDistance < distances[neighbor.targetNode]){
+                distances[neighbor.targetNode] = newDistance;
+                pq.push({distances[neighbor.targetNode], neighbor.targetNode});
+                parent[neighbor.targetNode] = current.second;
             }
         }
     }
@@ -377,13 +377,13 @@ graph::PathResult graph::path_astar(int start, int destination, std::function<in
         }
 
         for(const auto& neighbor : this->adjlist[current.second]){
-            int newDistance = distances[current.second] + neighbor.second;
-            if(newDistance < distances[neighbor.first]){
-                int f = newDistance + heuristic(neighbor.first);
+            int newDistance = distances[current.second] + neighbor.weight;
+            if(newDistance < distances[neighbor.targetNode]){
+                int f = newDistance + heuristic(neighbor.targetNode);
 
-                distances[neighbor.first] = newDistance;
-                pq.push({f, neighbor.first});
-                parent[neighbor.first] = current.second;
+                distances[neighbor.targetNode] = newDistance;
+                pq.push({f, neighbor.targetNode});
+                parent[neighbor.targetNode] = current.second;
             }
         }
     }
