@@ -39,15 +39,15 @@ public:
     void add_edge(int u,int v,int w = 1);
 
     //Utils
-    void print();
-    void export_dot();
+    void print() const;
+    void export_dot() const;
 
     //Algorithms
-    unordered_map<int, int> dijkstra(int source);
-    vector<int> dfs(int start);
-    vector<int> bfs(int start);
-    vector<int> path_dfs(int start, int destination);
-    vector<int> path_bfs(int start, int destination);
-    PathResult path_dijkstra(int start, int destination);
-    PathResult path_astar(int start, int destination, std::function<int(int)> heuristic = [](int){ return 0; });
+    unordered_map<int, int> dijkstra(int source) const;
+    vector<int> dfs(int start) const;
+    vector<int> bfs(int start) const;
+    vector<int> path_dfs(int start, int destination) const;
+    vector<int> path_bfs(int start, int destination) const;
+    PathResult path_dijkstra(int start, int destination) const;
+    PathResult path_astar(int start, int destination, std::function<int(int)> heuristic = [](int){ return 0; }) const;
 };
