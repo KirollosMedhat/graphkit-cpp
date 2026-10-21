@@ -318,6 +318,39 @@ void test_dijkstra_distances_unreachable_node(){    // a node in another compone
     assert(distances.at(4) == std::numeric_limits<int>::max());
 }
 
+void test_dijkstra_missing_source_returns_all_unreachable(){
+    graph g;
+    g.add_edge(1, 2, 5);
+    g.add_edge(2, 3, 2);
+
+    auto distances = g.dijkstra(99);
+
+    // Current behavior: nothing is reachable from a node that doesn't exist.
+    // This will change when missing nodes start to throw.
+    assert(distances.size() == 3);
+    for (const auto& [node, dist] : distances)
+        assert(dist == std::numeric_limits<int>::max());
+}
+
+void test_path_functions_missing_nodes_return_empty(){
+    graph g;
+    g.add_edge(1, 2, 5);
+    g.add_edge(2, 3, 2);
+
+    // missing start, then missing destination, for every route function
+    assert(g.path_dfs(99, 1).empty());
+    assert(g.path_dfs(1, 99).empty());
+    assert(g.path_bfs(99, 1).empty());
+    assert(g.path_bfs(1, 99).empty());
+    assert(g.path_dijkstra(99, 1).path.empty());
+    assert(g.path_dijkstra(1, 99).path.empty());
+    assert(g.path_astar(99, 1).path.empty());
+    assert(g.path_astar(1, 99).path.empty());
+
+    // none of those calls may have added a node to the graph
+    assert(g.dijkstra(1).size() == 3);
+}
+
 int main(){
 
     test_dijkstra_finds_lowest_cost_route();
@@ -342,6 +375,8 @@ int main(){
     test_dijkstra_distances();
     test_dijkstra_distances_unreachable_node();
 
+    test_dijkstra_missing_source_returns_all_unreachable();
+    test_path_functions_missing_nodes_return_empty();
 
     std::cout << "All tests passed\n";
 
