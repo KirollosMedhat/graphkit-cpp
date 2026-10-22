@@ -441,5 +441,10 @@ int main(){
 
     std::cout << "All tests passed\n";
 
+    graph g;
+    g.add_edge(1, 2, 3);
+    g.add_node(5);                       // a node with no edges
+    g.export_dot("testing2");
+
     return 0;
 }

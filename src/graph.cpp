@@ -76,8 +76,8 @@ unordered_map<int, int> graph::dijkstra(int source) const{
     return distances;
 }
 
-void graph::export_dot() const{
-    ofstream outFile("graph.dot", std::ios::out | std::ios::trunc);
+void graph::export_dot(const string& filename) const{
+    ofstream outFile(filename + ".dot", std::ios::out | std::ios::trunc);
 
     outFile << "graph G {\n";
     for (const auto& i : adjlist) {

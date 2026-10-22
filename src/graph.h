@@ -5,6 +5,7 @@
 #include <vector>
 #include <limits> 
 #include <functional>
+#include <fstream>
 
 using namespace std;
 
@@ -40,7 +41,7 @@ public:
 
     //Utils
     void print() const;
-    void export_dot() const;
+    void export_dot(const string& filename) const;
 
     //Algorithms
     unordered_map<int, int> dijkstra(int source) const;
