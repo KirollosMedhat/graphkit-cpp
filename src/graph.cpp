@@ -9,20 +9,25 @@
 #include <optional>
 #include <stdexcept>
 
+bool graph::add_node(int id){
+    return adjlist.try_emplace(id).second;
+}
+
 void graph::add_edge(int u,int v,int w){
-    adjlist[u].push_back({v,w});
-    adjlist[v].push_back({u,w});
+    add_node(u);
+    add_node(v);
+    adjlist.at(u).push_back({v,w});
+    adjlist.at(v).push_back({u,w});
 }
 
 void graph::print() const{
-    for (auto i:adjlist){
+    for (const auto& i:adjlist){
         cout << i.first << " -> ";
 
         for(const auto& k:i.second){
             cout << "(" << k.targetNode << ", " << k.weight << ") ";
         }
         cout << endl;
-
     }
 }
 
@@ -75,15 +80,16 @@ void graph::export_dot() const{
     ofstream outFile("graph.dot", std::ios::out | std::ios::trunc);
 
     outFile << "graph G {\n";
-    for (auto i : adjlist) {
-        for(auto k : i.second){
+    for (const auto& i : adjlist) {
+        outFile << i.first << ";\n";                     // declares the node, even if it has no edges
+
+        for(const auto& k : i.second){
             if (i.first < k.targetNode) {
                 outFile << i.first << " -- " << k.targetNode << " [label=\"" << k.weight << "\"];\n";
             }
         }
     }
     outFile << "}\n";
-    
 }
 
 // Depth-first traversal from `start`. Returns the nodes in the order they were
