@@ -13,7 +13,7 @@ bool graph::add_node(int id){
     return adjlist.try_emplace(id).second;
 }
 
-void graph::add_edge(int u,int v,int w){
+void graph::add_edge(int u, int v, graph::Weight w){
     add_node(u);
     add_node(v);
     adjlist.at(u).push_back({v,w});
@@ -33,9 +33,9 @@ void graph::print() const{
 
 // Dijkstra's algorithm: shortest distance from `source` to every node.
 // Requires non-negative weights: that is what makes a node's distance final once it is popped.
-// Unreachable nodes keep numeric_limits<int>::max().
-unordered_map<int, int> graph::dijkstra(int source) const{
-    unordered_map<int, int> distances;                  // Best known distance from source to each node.
+// Unreachable nodes keep graph::unreachable.
+unordered_map<int, graph::Weight> graph::dijkstra(int source) const{
+    unordered_map<int, graph::Weight> distances;                  // Best known distance from source to each node.
 
     // Min-queue of {priority, node}. Here the priority is the distance from source,
     // so the closest unprocessed node comes out first.
@@ -45,7 +45,7 @@ unordered_map<int, int> graph::dijkstra(int source) const{
     for (const auto& i: adjlist){
 
         if(i.first != source){
-            distances[i.first] = numeric_limits<int>::max();
+            distances[i.first] = graph::unreachable;
         }else{
             distances[i.first] = 0;
             pq.push({0,source});            
@@ -64,7 +64,7 @@ unordered_map<int, int> graph::dijkstra(int source) const{
         // Try to shorten the distance to each neighbor by going through the current node.
         for(const auto& edge : adjlist.at(current.node)){
             
-            int newDistance = distances[current.node] + edge.weight;  
+            graph::Weight newDistance = distances[current.node] + edge.weight;  
             
             // Better route: record it and queue the neighbor (any older entry is now stale).
             if(newDistance < distances[edge.targetNode]){
@@ -257,7 +257,7 @@ graph::PathResult graph::path_dijkstra(int start, int destination) const{
     if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
         return result;
     }
-    unordered_map<int, int> distances;                 
+    unordered_map<int, graph::Weight> distances;                 
     priority_queue<QueueEntry, vector<QueueEntry>, greater<QueueEntry>> pq;        //min-priority Queue.
     // <Node ID, Parent ID>
     unordered_map<int,int> parent;
@@ -266,7 +266,7 @@ graph::PathResult graph::path_dijkstra(int start, int destination) const{
 
     for (const auto& i: adjlist){
         if(i.first != start){
-            distances[i.first] = numeric_limits<int>::max();
+            distances[i.first] = graph::unreachable;
         }else{
             // Weight of start is 0 as it is the current node, we are already there.
             distances[i.first] = 0;
@@ -295,7 +295,7 @@ graph::PathResult graph::path_dijkstra(int start, int destination) const{
         }
 
         for(const auto& edge : adjlist.at(current.node)){
-            int newDistance = distances[current.node] + edge.weight;  
+            graph::Weight newDistance = distances[current.node] + edge.weight;  
             if(newDistance < distances[edge.targetNode]){
                 distances[edge.targetNode] = newDistance;
                 pq.push({distances[edge.targetNode], edge.targetNode});
@@ -307,7 +307,7 @@ graph::PathResult graph::path_dijkstra(int start, int destination) const{
 }
 
 
-graph::PathResult graph::path_astar(int start, int destination, std::function<int(int)> heuristic) const{
+graph::PathResult graph::path_astar(int start, int destination, std::function<graph::Weight(int)> heuristic) const{
     PathResult result;                               // Output: best known path from start to destination and it's distance.
 
     if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
@@ -315,7 +315,7 @@ graph::PathResult graph::path_astar(int start, int destination, std::function<in
         return result;
     }
 
-    unordered_map<int, int> distances;              // This is the g(n).
+    unordered_map<int, graph::Weight> distances;              // This is the g(n).
 
     // Min-priority queue of {f(n), node ID} pairs. Where f(n) = g(n) + h(n), 
     // g(n) is the cost from start to current node and h(n) is the estimate from current node to the destination.
@@ -325,7 +325,7 @@ graph::PathResult graph::path_astar(int start, int destination, std::function<in
 
     for (const auto& i: adjlist){
         if(i.first != start){
-            distances[i.first] = numeric_limits<int>::max();
+            distances[i.first] = graph::unreachable;
         }else{
             distances[i.first] = 0;
             pq.push({heuristic(start),start});
@@ -337,7 +337,7 @@ graph::PathResult graph::path_astar(int start, int destination, std::function<in
         auto current = pq.top();
         pq.pop();
 
-        int currentF = distances[current.node] + heuristic(current.node);
+        graph::Weight currentF = distances[current.node] + heuristic(current.node);
         if (current.priority > currentF) continue;
 
         if(current.node == destination){
@@ -353,9 +353,9 @@ graph::PathResult graph::path_astar(int start, int destination, std::function<in
         }
 
         for(const auto& edge : adjlist.at(current.node)){
-            int newDistance = distances[current.node] + edge.weight;
+            graph::Weight newDistance = distances[current.node] + edge.weight;
             if(newDistance < distances[edge.targetNode]){
-                int neighborF = newDistance + heuristic(edge.targetNode);
+                graph::Weight neighborF = newDistance + heuristic(edge.targetNode);
 
                 distances[edge.targetNode] = newDistance;
                 pq.push({neighborF, edge.targetNode});

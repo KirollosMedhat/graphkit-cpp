@@ -37,16 +37,16 @@ void test_dijkstra_unreachable_destination() {
     auto result3 = g.path_dijkstra(2, 3);
     auto result4 = g.path_dijkstra(2, 4);
 
-    assert(result1.distance == std::numeric_limits<int>::max());
+    assert(result1.distance == graph::unreachable);
     assert(result1.path.empty());
 
-    assert(result2.distance == std::numeric_limits<int>::max());
+    assert(result2.distance == graph::unreachable);
     assert(result2.path.empty());
 
-    assert(result3.distance == std::numeric_limits<int>::max());
+    assert(result3.distance == graph::unreachable);
     assert(result3.path.empty());
 
-    assert(result4.distance == std::numeric_limits<int>::max());
+    assert(result4.distance == graph::unreachable);
     assert(result4.path.empty());
 }
 
@@ -130,16 +130,16 @@ void test_astar_unreachable_destination(){
     auto result3 = g.path_astar(2, 3);
     auto result4 = g.path_astar(2, 4);
 
-    assert(result1.distance == std::numeric_limits<int>::max());
+    assert(result1.distance == graph::unreachable);
     assert(result1.path.empty());
 
-    assert(result2.distance == std::numeric_limits<int>::max());
+    assert(result2.distance == graph::unreachable);
     assert(result2.path.empty());
 
-    assert(result3.distance == std::numeric_limits<int>::max());
+    assert(result3.distance == graph::unreachable);
     assert(result3.path.empty());
 
-    assert(result4.distance == std::numeric_limits<int>::max());
+    assert(result4.distance == graph::unreachable);
     assert(result4.path.empty());
 
 }
@@ -314,8 +314,8 @@ void test_dijkstra_distances_unreachable_node(){    // a node in another compone
     assert(distances.size() == 4);
     assert(distances.at(1) == 0);
     assert(distances.at(2) == 5);
-    assert(distances.at(3) == std::numeric_limits<int>::max());
-    assert(distances.at(4) == std::numeric_limits<int>::max());
+    assert(distances.at(3) == graph::unreachable);
+    assert(distances.at(4) == graph::unreachable);
 }
 
 void test_dijkstra_missing_source_returns_all_unreachable(){
@@ -329,7 +329,7 @@ void test_dijkstra_missing_source_returns_all_unreachable(){
     // This will change when missing nodes start to throw.
     assert(distances.size() == 3);
     for (const auto& [node, dist] : distances)
-        assert(dist == std::numeric_limits<int>::max());
+        assert(dist == graph::unreachable);
 }
 
 void test_path_functions_missing_nodes_return_empty(){
@@ -390,7 +390,7 @@ void test_dijkstra_distances_with_isolated_node(){
     assert(distances.size() == 3);
     assert(distances.at(1) == 0);
     assert(distances.at(2) == 5);
-    assert(distances.at(3) == std::numeric_limits<int>::max());
+    assert(distances.at(3) == graph::unreachable);
 }
 
 void test_add_node_keeps_existing_edges(){
