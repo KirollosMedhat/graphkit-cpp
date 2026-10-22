@@ -11,7 +11,8 @@ using namespace std;
 class graph{
 public:
     using Weight = double;
-    static constexpr Weight unreachable = numeric_limits<Weight>::infinity(); 
+    static_assert(numeric_limits<Weight>::has_infinity, "Weight needs an infinity (use a floating-point type)");
+    static constexpr Weight unreachable = numeric_limits<Weight>::infinity();
 
 private:
     struct Edge {
