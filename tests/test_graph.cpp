@@ -6,6 +6,7 @@
 #include <set>
 #include <vector>
 #include <limits>
+#include <fstream>
 
 #include "graph.h"
 
@@ -53,7 +54,6 @@ void test_dijkstra_start_equals_destination(){
     graph g;
     g.add_edge(1, 2, 5);
     g.add_edge(3, 4, 2);
-
 
     auto result = g.path_dijkstra(1, 1);
     std::vector<int> correct_path = {1};
@@ -351,6 +351,62 @@ void test_path_functions_missing_nodes_return_empty(){
     assert(g.dijkstra(1).size() == 3);
 }
 
+void test_add_node_return_value(){
+    graph g;
+    bool first_add  = g.add_node(1);        // Returns true
+    bool second_add = g.add_node(1);        // Returns false
+    assert(first_add);
+    assert(!second_add);
+}
+
+void test_isolated_nodes_in_searches(){
+    graph g;
+    g.add_node(1);
+    g.add_node(2);
+
+    std::vector<int> only_one = {1};
+    assert(g.dfs(1) == only_one);
+    assert(g.bfs(1) == only_one);
+
+    // start == destination is a route of one node, even when the node has no edges
+    auto to_itself = g.path_dijkstra(1, 1);
+    assert(to_itself.path == only_one);
+    assert(to_itself.distance == 0);
+
+    // both nodes exist, but there is no route between them
+    assert(g.path_dijkstra(1, 2).path.empty());
+    assert(g.path_astar(1, 2).path.empty());
+    assert(g.path_bfs(1, 2).empty());
+    assert(g.path_dfs(1, 2).empty());
+}
+
+void test_dijkstra_distances_with_isolated_node(){
+    graph g;
+    g.add_edge(1, 2, 5);
+    g.add_node(3);                                  // exists, but has no edges
+
+    auto distances = g.dijkstra(1);
+
+    assert(distances.size() == 3);
+    assert(distances.at(1) == 0);
+    assert(distances.at(2) == 5);
+    assert(distances.at(3) == std::numeric_limits<int>::max());
+}
+
+void test_add_node_keeps_existing_edges(){
+    graph g;
+    g.add_edge(1, 2, 4);
+
+    bool added = g.add_node(1);                     // node 1 already exists
+    assert(!added);
+
+    auto result = g.path_dijkstra(1, 2);
+    std::vector<int> expected = {1, 2};
+    assert(result.distance == 4);
+    assert(result.path == expected);
+
+}
+
 int main(){
 
     test_dijkstra_finds_lowest_cost_route();
@@ -377,6 +433,11 @@ int main(){
 
     test_dijkstra_missing_source_returns_all_unreachable();
     test_path_functions_missing_nodes_return_empty();
+
+    test_add_node_return_value();
+    test_isolated_nodes_in_searches();
+    test_dijkstra_distances_with_isolated_node();
+    test_add_node_keeps_existing_edges();
 
     std::cout << "All tests passed\n";
 

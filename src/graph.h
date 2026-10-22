@@ -25,7 +25,6 @@ private:
     unordered_map<int, list<Edge>> adjlist;
 
 public:
-
     struct PathResult {
         vector<int> path;     // start ... destination; empty if unreachable
         int distance = numeric_limits<int>::max();         // total weight of the path
@@ -37,6 +36,7 @@ public:
     /// @param v The other endpoint.
     /// @param w Edge weight; defaults to 1 so unweighted graphs get hop counts.
     void add_edge(int u,int v,int w = 1);
+    bool add_node(int id);
 
     //Utils
     void print() const;
