@@ -9,11 +9,11 @@
 #include <optional>
 #include <stdexcept>
 
-bool graph::add_node(int id){
+bool graph::add_node(graph::NodeID id){
     return adjlist.try_emplace(id).second;
 }
 
-void graph::add_edge(int u, int v, graph::Weight w){
+void graph::add_edge(graph::NodeID u, graph::NodeID v, graph::Weight w){
     add_node(u);
     add_node(v);
     adjlist.at(u).push_back({v,w});
@@ -34,8 +34,8 @@ void graph::print() const{
 // Dijkstra's algorithm: shortest distance from `source` to every node.
 // Requires non-negative weights: that is what makes a node's distance final once it is popped.
 // Unreachable nodes keep graph::unreachable.
-unordered_map<int, graph::Weight> graph::dijkstra(int source) const{
-    unordered_map<int, graph::Weight> distances;                  // Best known distance from source to each node.
+unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID source) const{
+    unordered_map<graph::NodeID, graph::Weight> distances;                  // Best known distance from source to each node.
 
     // Min-queue of {priority, node}. Here the priority is the distance from source,
     // so the closest unprocessed node comes out first.
@@ -98,8 +98,8 @@ void graph::export_dot(const string& filename) const{
 // Only nodes reachable from `start` appear. Returns an empty vector if `start`
 // isn't in the graph. Edge weights are ignored. Time: O(V + E).
 // V is the number of vertices, meaning the nodes. E is the number of edges.
-vector<int> graph::dfs(int start) const{
-    vector<int> order;                                  // Output: nodes in the order they were processed.
+vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
+    vector<graph::NodeID> order;                                  // Output: nodes in the order they were processed.
 
     // Guard: use find (not operator[]) so a missing node isn't inserted into the graph.
     if(adjlist.find(start) == adjlist.end()){
@@ -109,12 +109,12 @@ vector<int> graph::dfs(int start) const{
 
     // visited means "already processed", not "already queued". A node can sit on the
     // stack several times; only the first copy that is popped gets processed.
-    unordered_set<int> visited;
-    stack<int> st;                                      // Nodes waiting to be processed; the most recently pushed comes out first (LIFO).
+    unordered_set<graph::NodeID> visited;
+    stack<graph::NodeID> st;                                      // Nodes waiting to be processed; the most recently pushed comes out first (LIFO).
     st.push(start);
 
     while(!st.empty()){
-        int currentNode = st.top();
+        graph::NodeID currentNode = st.top();
         st.pop();                                       // Always remove the entry first, so every iteration makes progress.
 
         // A copy of this node was already processed earlier, so this entry is a
@@ -143,19 +143,19 @@ vector<int> graph::dfs(int start) const{
     return order;
 }
 
-vector<int> graph::bfs(int start) const{
-    vector<int> order;
+vector<graph::NodeID> graph::bfs(graph::NodeID start) const{
+    vector<graph::NodeID> order;
     if(adjlist.count(start) == 0){
         //cout<<"No such node, terminating."<<endl;
         return order;
     }
-    unordered_set<int> visited;
-    queue<int> q;
+    unordered_set<graph::NodeID> visited;
+    queue<graph::NodeID> q;
     q.push(start);
     visited.insert(start);
 
     while(!q.empty()){
-        int currentNode = q.front();
+        graph::NodeID currentNode = q.front();
         q.pop();
 
         order.push_back(currentNode);                           
@@ -169,15 +169,15 @@ vector<int> graph::bfs(int start) const{
     return order;
 }
 
-vector<int> graph::path_dfs(int start, int destination) const{
-    vector<int> result;
+vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID destination) const{
+    vector<graph::NodeID> result;
     if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
         return result;
     }
 
-    unordered_set<int> visited;
-    stack<pair<int,int>> st;
-    unordered_map<int,int> parent;
+    unordered_set<graph::NodeID> visited;
+    stack<pair<graph::NodeID, graph::NodeID>> st;
+    unordered_map<graph::NodeID,graph::NodeID> parent;
     st.push({start, -1});                         //-1 for the starting node with no parents.
 
     while(!st.empty()){
@@ -188,7 +188,7 @@ vector<int> graph::path_dfs(int start, int destination) const{
         parent[currentPair.first] = currentPair.second;
 
         if(currentPair.first == destination){
-            int next = destination;
+            graph::NodeID next = destination;
             while (next != start){
                 result.push_back(next);
                 next = parent[next];
@@ -210,15 +210,15 @@ vector<int> graph::path_dfs(int start, int destination) const{
     return result;
 }
 
-vector<int> graph::path_bfs(int start, int destination) const{
-    vector<int> result;
+vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID destination) const{
+    vector<graph::NodeID> result;
     if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
         return result;
     }
 
-    unordered_set<int> visited;
-    queue<pair<int,int>> q;
-    unordered_map<int,int> parent;
+    unordered_set<graph::NodeID> visited;
+    queue<pair<graph::NodeID, graph::NodeID>> q;
+    unordered_map<graph::NodeID,graph::NodeID> parent;
     q.push({start, -1});                         //-1 for the starting node with no parents.
 
     while(!q.empty()){
@@ -229,7 +229,7 @@ vector<int> graph::path_bfs(int start, int destination) const{
         parent[currentPair.first] = currentPair.second;
 
         if(currentPair.first == destination){
-            int next = destination;
+            graph::NodeID next = destination;
             while (next != start){
                 result.push_back(next);
                 next = parent[next];
@@ -251,16 +251,16 @@ vector<int> graph::path_bfs(int start, int destination) const{
     return result;
 }
 
-graph::PathResult graph::path_dijkstra(int start, int destination) const{
+graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destination) const{
     PathResult result;                               // Output: best known path from start to destination and its distance.
 
     if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
         return result;
     }
-    unordered_map<int, graph::Weight> distances;                 
+    unordered_map<graph::NodeID, graph::Weight> distances;                 
     priority_queue<QueueEntry, vector<QueueEntry>, greater<QueueEntry>> pq;        //min-priority Queue.
     // <Node ID, Parent ID>
-    unordered_map<int,int> parent;
+    unordered_map<graph::NodeID, graph::NodeID> parent;
 
     
 
@@ -282,7 +282,7 @@ graph::PathResult graph::path_dijkstra(int start, int destination) const{
         if (current.priority > distances[current.node]) continue;
 
         if(current.node == destination){
-            int next = destination;
+            graph::NodeID next = destination;
             while (next != start){
                 result.path.push_back(next);
                 next = parent[next];
@@ -307,7 +307,7 @@ graph::PathResult graph::path_dijkstra(int start, int destination) const{
 }
 
 
-graph::PathResult graph::path_astar(int start, int destination, std::function<graph::Weight(int)> heuristic) const{
+graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destination, std::function<graph::Weight(NodeID)> heuristic) const{
     PathResult result;                               // Output: best known path from start to destination and it's distance.
 
     if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
@@ -315,13 +315,13 @@ graph::PathResult graph::path_astar(int start, int destination, std::function<gr
         return result;
     }
 
-    unordered_map<int, graph::Weight> distances;              // This is the g(n).
+    unordered_map<graph::NodeID, graph::Weight> distances;              // This is the g(n).
 
     // Min-priority queue of {f(n), node ID} pairs. Where f(n) = g(n) + h(n), 
     // g(n) is the cost from start to current node and h(n) is the estimate from current node to the destination.
     priority_queue<QueueEntry, vector<QueueEntry>, greater<QueueEntry>> pq;
 
-    unordered_map<int,int> parent;
+    unordered_map<graph::NodeID, graph::NodeID> parent;
 
     for (const auto& i: adjlist){
         if(i.first != start){
@@ -341,7 +341,7 @@ graph::PathResult graph::path_astar(int start, int destination, std::function<gr
         if (current.priority > currentF) continue;
 
         if(current.node == destination){
-            int next = destination;
+            graph::NodeID next = destination;
             while (next != start){
                 result.path.push_back(next);
                 next = parent[next];
