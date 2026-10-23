@@ -262,18 +262,10 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
     // <Node ID, Parent ID>
     unordered_map<graph::NodeID, graph::NodeID> parent;
 
-    
+    distances[start] = 0;
+    parent[start] = -1;
+    pq.push({0, start});
 
-    for (const auto& i: adjlist){
-        if(i.first != start){
-            distances[i.first] = graph::unreachable;
-        }else{
-            // Weight of start is 0 as it is the current node, we are already there.
-            distances[i.first] = 0;
-            pq.push({0,start});
-            parent[start] = -1;                 // -1 is for a node with no parent.
-        }
-    }
 
     while(!pq.empty()){
         auto current = pq.top();                               // Getting the highest priority node from the queue.
@@ -296,6 +288,9 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
 
         for(const auto& edge : adjlist.at(current.node)){
             graph::Weight newDistance = distances[current.node] + edge.weight;  
+            if(distances.count(edge.targetNode) == 0){
+                distances[edge.targetNode] = graph::unreachable;
+            }
             if(newDistance < distances[edge.targetNode]){
                 distances[edge.targetNode] = newDistance;
                 pq.push({distances[edge.targetNode], edge.targetNode});
@@ -323,15 +318,9 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
 
     unordered_map<graph::NodeID, graph::NodeID> parent;
 
-    for (const auto& i: adjlist){
-        if(i.first != start){
-            distances[i.first] = graph::unreachable;
-        }else{
-            distances[i.first] = 0;
-            pq.push({heuristic(start),start});
-            parent[start] = -1;                 // -1 is for a node with no parent.
-        }
-    }
+    distances[start] = 0;
+    parent[start] = -1;
+    pq.push({heuristic(start),start});
 
     while(!pq.empty()){
         auto current = pq.top();
@@ -354,6 +343,10 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
 
         for(const auto& edge : adjlist.at(current.node)){
             graph::Weight newDistance = distances[current.node] + edge.weight;
+            if(distances.count(edge.targetNode) == 0){
+                distances[edge.targetNode] = graph::unreachable;
+            }
+
             if(newDistance < distances[edge.targetNode]){
                 graph::Weight neighborF = newDistance + heuristic(edge.targetNode);
 
