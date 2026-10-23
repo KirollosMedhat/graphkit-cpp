@@ -74,7 +74,7 @@ void routes_demo() {
     auto distances = g.dijkstra(1);
     cout << "  Dijkstra distances from node 1: to 19 = " << distances[19]
          << ", to 36 = " << distances[36] << endl;
-    g.export_dot();                                         // writes graph.dot
+    g.export_dot("test");                                         // writes graph.dot
 }
 
 // A* on a grid: same distance as without a heuristic, but far fewer nodes examined.
