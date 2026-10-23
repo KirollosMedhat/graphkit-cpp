@@ -81,6 +81,8 @@ int main() {
     using Clock = std::chrono::steady_clock;
     double dijkstra_ms = 0, astar_ms = 0;
     int compared = 0, different = 0;
+    auto dExplored = 0;
+    auto AStarExplored = 0;
 
     while (compared < QUERIES) {
         int a = pick(rng), b = pick(rng);
@@ -97,12 +99,16 @@ int main() {
         if (r1.distance != r2.distance) different++;
         dijkstra_ms += std::chrono::duration<double, std::milli>(t1 - t0).count();
         astar_ms    += std::chrono::duration<double, std::milli>(t2 - t1).count();
+        dExplored += r1.numberOfExploredNodes;
+        AStarExplored += r2.numberOfExploredNodes;
     }
 
     std::cout << "\nLarge grid " << W << "x" << H << ", 25% walls, " << compared << " routes\n";
     std::cout << "  routes with different distances: " << different << "\n";
     std::cout << "  Dijkstra total: " << dijkstra_ms << " ms\n";
+    std::cout << "  Dijkstra Nodes explored: " << dExplored << " nodes\n";
     std::cout << "  A* total:       " << astar_ms << " ms\n";
     std::cout << "  A* is " << dijkstra_ms / astar_ms << "x faster\n";
+    std::cout << "  A* Nodes explored: " << AStarExplored << " nodes\n";
     return 0;
 }

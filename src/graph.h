@@ -34,6 +34,7 @@ public:
     struct PathResult {
         vector<NodeID> path;     // start ... destination; empty if unreachable
         Weight distance = unreachable;         // total weight of the path
+        int numberOfExploredNodes = 0;
     };
 
     /// @brief Adds an undirected edge between u and v.

@@ -270,6 +270,7 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
     while(!pq.empty()){
         auto current = pq.top();                               // Getting the highest priority node from the queue.
         pq.pop();                                                       // Removing it from the queue.
+        result.numberOfExploredNodes++;
 
         if (current.priority > distances[current.node]) continue;
 
@@ -325,6 +326,7 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
     while(!pq.empty()){
         auto current = pq.top();
         pq.pop();
+        result.numberOfExploredNodes++;
 
         graph::Weight currentF = distances[current.node] + heuristic(current.node);
         if (current.priority > currentF) continue;
