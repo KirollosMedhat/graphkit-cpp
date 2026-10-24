@@ -5,15 +5,15 @@
 #include <vector>
 #include <limits> 
 #include <functional>
+#include <string>
 
-using namespace std;
 
 class graph{
 public:
     using Weight = double;
     using NodeID = int;
-    static_assert(numeric_limits<Weight>::has_infinity, "Weight needs an infinity (use a floating-point type)");
-    static constexpr Weight unreachable = numeric_limits<Weight>::infinity();
+    static_assert(std::numeric_limits<Weight>::has_infinity, "Weight needs an infinity (use a floating-point type)");
+    static constexpr Weight unreachable = std::numeric_limits<Weight>::infinity();
 
 private:
     struct Edge {
@@ -28,11 +28,11 @@ private:
         auto operator<=>(const QueueEntry&) const = default;            //std::strong_ordering for int, std::partial_ordering for double.
     };
 
-    unordered_map<NodeID, list<Edge>> adjlist;
+    std::unordered_map<NodeID, std::list<Edge>> adjlist;
 
 public:
     struct PathResult {
-        vector<NodeID> path;     // start ... destination; empty if unreachable
+        std::vector<NodeID> path;     // start ... destination; empty if unreachable
         Weight distance = unreachable;         // total weight of the path
         int numberOfExploredNodes = 0;
     };
@@ -47,14 +47,14 @@ public:
 
     //Utils
     void print() const;
-    void export_dot(const string& filename) const;
+    void export_dot(const std::string& filename) const;
 
     //Algorithms
-    unordered_map<NodeID, Weight> dijkstra(NodeID source) const;
-    vector<NodeID> dfs(NodeID start) const;
-    vector<NodeID> bfs(NodeID start) const;
-    vector<NodeID> path_dfs(NodeID start, NodeID destination) const;
-    vector<NodeID> path_bfs(NodeID start, NodeID destination) const;
+    std::unordered_map<NodeID, Weight> dijkstra(NodeID source) const;
+    std::vector<NodeID> dfs(NodeID start) const;
+    std::vector<NodeID> bfs(NodeID start) const;
+    std::vector<NodeID> path_dfs(NodeID start, NodeID destination) const;
+    std::vector<NodeID> path_bfs(NodeID start, NodeID destination) const;
     PathResult path_dijkstra(NodeID start, NodeID destination) const;
     PathResult path_astar(NodeID start, NodeID destination, std::function<Weight(NodeID)> heuristic = [](NodeID){ return 0; }) const;
 };

@@ -27,27 +27,27 @@ void graph::add_edge(graph::NodeID u, graph::NodeID v, graph::Weight w){
 
 void graph::print() const{
     for (const auto& i:adjlist){
-        cout << i.first << " -> ";
+        std::cout << i.first << " -> ";
 
         for(const auto& k:i.second){
-            cout << "(" << k.targetNode << ", " << k.weight << ") ";
+            std::cout << "(" << k.targetNode << ", " << k.weight << ") ";
         }
-        cout << endl;
+        std::cout << std::endl;
     }
 }
 
 // Dijkstra's algorithm: shortest distance from `source` to every node.
 // Requires non-negative weights: that is what makes a node's distance final once it is popped.
 // Unreachable nodes keep graph::unreachable.
-unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID source) const{
+std::unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID source) const{
     if(adjlist.count(source) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(source));
     }
-    unordered_map<graph::NodeID, graph::Weight> distances;                  // Best known distance from source to each node.
+    std::unordered_map<graph::NodeID, graph::Weight> distances;                  // Best known distance from source to each node.
 
     // Min-queue of {priority, node}. Here the priority is the distance from source,
     // so the closest unprocessed node comes out first.
-    priority_queue<QueueEntry, vector<QueueEntry>, greater<QueueEntry>> pq;        //min-priority Queue.
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;        //min-priority Queue.
 
     // Every node starts at "infinity"; the source starts at 0.
     for (const auto& i: adjlist){
@@ -84,8 +84,8 @@ unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID source
     return distances;
 }
 
-void graph::export_dot(const string& filename) const{
-    ofstream outFile(filename + ".dot", std::ios::out | std::ios::trunc);
+void graph::export_dot(const std::string& filename) const{
+    std::ofstream outFile(filename + ".dot", std::ios::out | std::ios::trunc);
 
     outFile << "graph G {\n";
     for (const auto& i : adjlist) {
@@ -106,16 +106,16 @@ void graph::export_dot(const string& filename) const{
 // Only nodes reachable from `start` appear. Returns an empty vector if `start`
 // isn't in the graph. Edge weights are ignored. Time: O(V + E).
 // V is the number of vertices, meaning the nodes. E is the number of edges.
-vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
+std::vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
     if(adjlist.count(start) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
-    vector<graph::NodeID> order;                                  // Output: nodes in the order they were processed.
+    std::vector<graph::NodeID> order;                                  // Output: nodes in the order they were processed.
 
     // visited means "already processed", not "already queued". A node can sit on the
     // stack several times; only the first copy that is popped gets processed.
-    unordered_set<graph::NodeID> visited;
-    stack<graph::NodeID> st;                                      // Nodes waiting to be processed; the most recently pushed comes out first (LIFO).
+    std::unordered_set<graph::NodeID> visited;
+    std::stack<graph::NodeID> st;                                      // Nodes waiting to be processed; the most recently pushed comes out first (LIFO).
     st.push(start);
 
     while(!st.empty()){
@@ -148,13 +148,13 @@ vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
     return order;
 }
 
-vector<graph::NodeID> graph::bfs(graph::NodeID start) const{
+std::vector<graph::NodeID> graph::bfs(graph::NodeID start) const{
     if(adjlist.count(start) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
-    vector<graph::NodeID> order;
-    unordered_set<graph::NodeID> visited;
-    queue<graph::NodeID> q;
+    std::vector<graph::NodeID> order;
+    std::unordered_set<graph::NodeID> visited;
+    std::queue<graph::NodeID> q;
     q.push(start);
     visited.insert(start);
 
@@ -173,7 +173,7 @@ vector<graph::NodeID> graph::bfs(graph::NodeID start) const{
     return order;
 }
 
-vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID destination) const{
+std::vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID destination) const{
     if(adjlist.count(start) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
@@ -182,11 +182,11 @@ vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID destina
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
     }
 
-    vector<graph::NodeID> result;
+    std::vector<graph::NodeID> result;
 
-    unordered_set<graph::NodeID> visited;
-    stack<pair<graph::NodeID, graph::NodeID>> st;
-    unordered_map<graph::NodeID,graph::NodeID> parent;
+    std::unordered_set<graph::NodeID> visited;
+    std::stack<std::pair<graph::NodeID, graph::NodeID>> st;
+    std::unordered_map<graph::NodeID,graph::NodeID> parent;
     st.push({start, -1});                         //-1 for the starting node with no parents.
 
     while(!st.empty()){
@@ -203,7 +203,7 @@ vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID destina
                 next = parent[next];
             }
             result.push_back(start);
-            reverse(result.begin(), result.end());
+            std::reverse(result.begin(), result.end());
             break;
         }
 
@@ -219,7 +219,7 @@ vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID destina
     return result;
 }
 
-vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID destination) const{
+std::vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID destination) const{
     if(adjlist.count(start) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
@@ -228,11 +228,11 @@ vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID destina
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
     }
 
-    vector<graph::NodeID> result;
+    std::vector<graph::NodeID> result;
 
-    unordered_set<graph::NodeID> visited;
-    queue<pair<graph::NodeID, graph::NodeID>> q;
-    unordered_map<graph::NodeID,graph::NodeID> parent;
+    std::unordered_set<graph::NodeID> visited;
+    std::queue<std::pair<graph::NodeID, graph::NodeID>> q;
+    std::unordered_map<graph::NodeID,graph::NodeID> parent;
     q.push({start, -1});                         //-1 for the starting node with no parents.
 
     while(!q.empty()){
@@ -249,7 +249,7 @@ vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID destina
                 next = parent[next];
             }
             result.push_back(start);
-            reverse(result.begin(), result.end());
+            std::reverse(result.begin(), result.end());
             break;
         }
 
@@ -276,10 +276,10 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
 
     PathResult result;                               // Output: best known path from start to destination and its distance.
 
-    unordered_map<graph::NodeID, graph::Weight> distances;                 
-    priority_queue<QueueEntry, vector<QueueEntry>, greater<QueueEntry>> pq;        //min-priority Queue.
+    std::unordered_map<graph::NodeID, graph::Weight> distances;                 
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;        //min-priority Queue.
     // <Node ID, Parent ID>
-    unordered_map<graph::NodeID, graph::NodeID> parent;
+    std::unordered_map<graph::NodeID, graph::NodeID> parent;
 
     distances[start] = 0;
     parent[start] = -1;
@@ -300,7 +300,7 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
                 next = parent[next];
             }
             result.path.push_back(start);
-            reverse(result.path.begin(), result.path.end());
+            std::reverse(result.path.begin(), result.path.end());
             result.distance = distances[destination];
             break;
 
@@ -332,13 +332,13 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
     }
     PathResult result;                               // Output: best known path from start to destination and it's distance.
 
-    unordered_map<graph::NodeID, graph::Weight> distances;              // This is the g(n).
+    std::unordered_map<graph::NodeID, graph::Weight> distances;              // This is the g(n).
 
     // Min-priority queue of {f(n), node ID} pairs. Where f(n) = g(n) + h(n), 
     // g(n) is the cost from start to current node and h(n) is the estimate from current node to the destination.
-    priority_queue<QueueEntry, vector<QueueEntry>, greater<QueueEntry>> pq;
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;
 
-    unordered_map<graph::NodeID, graph::NodeID> parent;
+    std::unordered_map<graph::NodeID, graph::NodeID> parent;
 
     distances[start] = 0;
     parent[start] = -1;
@@ -359,7 +359,7 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
                 next = parent[next];
             }
             result.path.push_back(start);
-            reverse(result.path.begin(), result.path.end());
+            std::reverse(result.path.begin(), result.path.end());
             result.distance = distances[destination];
             break;
         }
