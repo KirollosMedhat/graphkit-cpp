@@ -10,6 +10,14 @@
 
 #include "graph.h"
 
+bool throws_invalid_argument(const std::function<void()>& action){
+    try{
+        action();
+    }catch(const std::invalid_argument&){
+        return true;
+    }
+    return false;
+}
 
 void test_dijkstra_finds_lowest_cost_route() {
     graph g;
@@ -202,23 +210,11 @@ void test_dfs_bfs_missing_nodes(){
     g.add_edge(2, 3, 1);
     g.add_edge(3, 4, 1);
 
-    auto bfs_result = g.bfs(5);
-    auto dfs_result = g.dfs(5);
+    assert(throws_invalid_argument([&](){g.bfs(5);}));
+    assert(throws_invalid_argument([&](){g.dfs(5);}));
 
-    assert(bfs_result.empty());
-    assert(dfs_result.empty());
-}
-
-void test_dijkstra_single_edge_graph(){
-    graph g;
-    g.add_edge(1, 2, 5);
-
-    auto result = g.path_dijkstra(1, 2);
-
-    std::vector<int> expected = {1, 2};
-
-    assert(result.distance == 5); 
-    assert(result.path == expected);
+    assert(!throws_invalid_argument([&](){ g.bfs(1); }));
+    assert(g.dijkstra(1).size() == 4);
 }
 
 void test_graph_duplicate_edges_and_self_loops(){
@@ -304,51 +300,32 @@ void test_dijkstra_distances(){                     // edges 1-2 (10), 1-3 (1), 
     assert(distances.at(2) == 3);       // through 3 (1 + 2), not the direct edge (10)
 }
 
-void test_dijkstra_distances_unreachable_node(){    // a node in another component holds INT_MAX
-    graph g;
-    g.add_edge(1, 2, 5);
-    g.add_edge(3, 4, 2);
-
-    auto distances = g.dijkstra(1);
-
-    assert(distances.size() == 4);
-    assert(distances.at(1) == 0);
-    assert(distances.at(2) == 5);
-    assert(distances.at(3) == graph::unreachable);
-    assert(distances.at(4) == graph::unreachable);
-}
-
-void test_dijkstra_missing_source_returns_all_unreachable(){
+void test_dijkstra_missing_source_throws(){
     graph g;
     g.add_edge(1, 2, 5);
     g.add_edge(2, 3, 2);
 
-    auto distances = g.dijkstra(99);
-
-    // Current behavior: nothing is reachable from a node that doesn't exist.
-    // This will change when missing nodes start to throw.
-    assert(distances.size() == 3);
-    for (const auto& [node, dist] : distances)
-        assert(dist == graph::unreachable);
-}
-
-void test_path_functions_missing_nodes_return_empty(){
-    graph g;
-    g.add_edge(1, 2, 5);
-    g.add_edge(2, 3, 2);
-
-    // missing start, then missing destination, for every route function
-    assert(g.path_dfs(99, 1).empty());
-    assert(g.path_dfs(1, 99).empty());
-    assert(g.path_bfs(99, 1).empty());
-    assert(g.path_bfs(1, 99).empty());
-    assert(g.path_dijkstra(99, 1).path.empty());
-    assert(g.path_dijkstra(1, 99).path.empty());
-    assert(g.path_astar(99, 1).path.empty());
-    assert(g.path_astar(1, 99).path.empty());
-
-    // none of those calls may have added a node to the graph
+    assert(throws_invalid_argument([&](){g.dijkstra(99);}));
+    assert(!throws_invalid_argument([&]{ g.dijkstra(1); }));
     assert(g.dijkstra(1).size() == 3);
+}
+
+void test_path_functions_missing_nodes_throw(){
+    graph g;
+    g.add_edge(1, 2, 5);
+    g.add_edge(2, 3, 2);
+
+    assert(throws_invalid_argument([&](){g.path_dfs(99, 1);} ));
+    assert(throws_invalid_argument([&](){g.path_dfs(1, 99);} ));
+    assert(throws_invalid_argument([&](){g.path_bfs(99, 1);} ));
+    assert(throws_invalid_argument([&](){g.path_bfs(1, 99);} ));
+    assert(throws_invalid_argument([&](){g.path_dijkstra(99, 1);}));
+    assert(throws_invalid_argument([&](){g.path_dijkstra(1, 99);}));
+    assert(throws_invalid_argument([&](){g.path_astar(99, 1);}));
+    assert(throws_invalid_argument([&](){g.path_astar(1, 99);}));
+
+    assert(!throws_invalid_argument([&](){ g.path_dfs(1, 3); }));
+    
 }
 
 void test_add_node_return_value(){
@@ -378,6 +355,8 @@ void test_isolated_nodes_in_searches(){
     assert(g.path_astar(1, 2).path.empty());
     assert(g.path_bfs(1, 2).empty());
     assert(g.path_dfs(1, 2).empty());
+
+    assert(throws_invalid_argument([&](){ g.dfs(99); }));
 }
 
 void test_dijkstra_distances_with_isolated_node(){
@@ -407,6 +386,42 @@ void test_add_node_keeps_existing_edges(){
 
 }
 
+void test_add_edge_rejects_invalid_weights(){
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    const double inf = std::numeric_limits<double>::infinity();
+
+    graph g;
+    assert(throws_invalid_argument([&](){ g.add_edge(1, 2, -1); }));
+    assert(throws_invalid_argument([&](){ g.add_edge(1, 2, nan); }));
+    assert(throws_invalid_argument([&](){ g.add_edge(1, 2, inf); }));
+    assert(throws_invalid_argument([&](){ g.add_edge(1, 2, -inf); }));
+
+    // none of the rejected calls may have added a node: node 1 must still not exist
+    assert(throws_invalid_argument([&](){ g.dfs(1); }));
+}
+
+void test_add_edge_accepts_valid_weights(){
+    graph g;
+    assert(!throws_invalid_argument([&](){ g.add_edge(1, 2, 0); }));
+    assert(!throws_invalid_argument([&](){ g.add_edge(2, 3, 2.5); }));
+
+    assert(g.path_dijkstra(1, 3).distance == 2.5);        // 0 + 2.5
+}
+
+void test_negative_node_ids_are_accepted(){
+    graph g;
+    assert(!throws_invalid_argument([&](){ g.add_edge(-1, 2, 1); }));
+    assert(!throws_invalid_argument([&](){ g.add_edge(2, -3, 1); }));
+    assert(!throws_invalid_argument([&](){ g.add_node(-9); }));
+
+    std::vector<graph::NodeID> expected = {-1, 2, -3};
+    std::vector<graph::NodeID> only_minus_nine = {-9};
+
+    assert(g.path_bfs(-1, -3) == expected);               // -1 works as the start node
+    assert(g.path_dijkstra(-1, -3).distance == 2);
+    assert(g.dfs(-9) == only_minus_nine);
+}
+
 int main(){
 
     test_dijkstra_finds_lowest_cost_route();
@@ -421,7 +436,6 @@ int main(){
     test_bfs_returns_path_with_fewest_edges();
     test_dfs_bfs_missing_nodes();
 
-    test_dijkstra_single_edge_graph();  
     test_graph_duplicate_edges_and_self_loops();
     test_dijkstra_zero_weight_edges();
 
@@ -429,15 +443,18 @@ int main(){
     test_dfs_visit_order();
     test_bfs_visit_order();
     test_dijkstra_distances();
-    test_dijkstra_distances_unreachable_node();
 
-    test_dijkstra_missing_source_returns_all_unreachable();
-    test_path_functions_missing_nodes_return_empty();
+    test_dijkstra_missing_source_throws();
+    test_path_functions_missing_nodes_throw();
 
     test_add_node_return_value();
     test_isolated_nodes_in_searches();
     test_dijkstra_distances_with_isolated_node();
     test_add_node_keeps_existing_edges();
+
+    test_negative_node_ids_are_accepted();
+    test_add_edge_accepts_valid_weights();
+    test_add_edge_rejects_invalid_weights();
 
     std::cout << "All tests passed\n";
 

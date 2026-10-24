@@ -8,12 +8,17 @@
 #include <compare>
 #include <optional>
 #include <stdexcept>
+#include <cmath>
+#include <string>
 
 bool graph::add_node(graph::NodeID id){
     return adjlist.try_emplace(id).second;
 }
 
 void graph::add_edge(graph::NodeID u, graph::NodeID v, graph::Weight w){
+    if(w < 0 || !std::isfinite(w)){
+        throw std::invalid_argument("Weight must be finite and non-negative.");
+    }
     add_node(u);
     add_node(v);
     adjlist.at(u).push_back({v,w});
@@ -35,6 +40,9 @@ void graph::print() const{
 // Requires non-negative weights: that is what makes a node's distance final once it is popped.
 // Unreachable nodes keep graph::unreachable.
 unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID source) const{
+    if(adjlist.count(source) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(source));
+    }
     unordered_map<graph::NodeID, graph::Weight> distances;                  // Best known distance from source to each node.
 
     // Min-queue of {priority, node}. Here the priority is the distance from source,
@@ -99,13 +107,10 @@ void graph::export_dot(const string& filename) const{
 // isn't in the graph. Edge weights are ignored. Time: O(V + E).
 // V is the number of vertices, meaning the nodes. E is the number of edges.
 vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
-    vector<graph::NodeID> order;                                  // Output: nodes in the order they were processed.
-
-    // Guard: use find (not operator[]) so a missing node isn't inserted into the graph.
-    if(adjlist.find(start) == adjlist.end()){
-        //cout<<"No such node, terminating."<<endl;
-        return order;
+    if(adjlist.count(start) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
+    vector<graph::NodeID> order;                                  // Output: nodes in the order they were processed.
 
     // visited means "already processed", not "already queued". A node can sit on the
     // stack several times; only the first copy that is popped gets processed.
@@ -144,11 +149,10 @@ vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
 }
 
 vector<graph::NodeID> graph::bfs(graph::NodeID start) const{
-    vector<graph::NodeID> order;
     if(adjlist.count(start) == 0){
-        //cout<<"No such node, terminating."<<endl;
-        return order;
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
+    vector<graph::NodeID> order;
     unordered_set<graph::NodeID> visited;
     queue<graph::NodeID> q;
     q.push(start);
@@ -170,10 +174,15 @@ vector<graph::NodeID> graph::bfs(graph::NodeID start) const{
 }
 
 vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID destination) const{
-    vector<graph::NodeID> result;
-    if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
-        return result;
+    if(adjlist.count(start) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
+
+    if(adjlist.count(destination) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
+    }
+
+    vector<graph::NodeID> result;
 
     unordered_set<graph::NodeID> visited;
     stack<pair<graph::NodeID, graph::NodeID>> st;
@@ -211,10 +220,15 @@ vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID destina
 }
 
 vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID destination) const{
-    vector<graph::NodeID> result;
-    if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
-        return result;
+    if(adjlist.count(start) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
+
+    if(adjlist.count(destination) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
+    }
+
+    vector<graph::NodeID> result;
 
     unordered_set<graph::NodeID> visited;
     queue<pair<graph::NodeID, graph::NodeID>> q;
@@ -252,11 +266,16 @@ vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID destina
 }
 
 graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destination) const{
+    if(adjlist.count(start) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
+    }
+
+    if(adjlist.count(destination) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
+    }
+
     PathResult result;                               // Output: best known path from start to destination and its distance.
 
-    if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
-        return result;
-    }
     unordered_map<graph::NodeID, graph::Weight> distances;                 
     priority_queue<QueueEntry, vector<QueueEntry>, greater<QueueEntry>> pq;        //min-priority Queue.
     // <Node ID, Parent ID>
@@ -304,12 +323,14 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
 
 
 graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destination, std::function<graph::Weight(NodeID)> heuristic) const{
-    PathResult result;                               // Output: best known path from start to destination and it's distance.
-
-    if(adjlist.count(start) == 0 || adjlist.count(destination) == 0){
-        //cout<<"Start or destination node are not in the graph, terminating."<<endl;
-        return result;
+    if(adjlist.count(start) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
+
+    if(adjlist.count(destination) == 0){
+        throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
+    }
+    PathResult result;                               // Output: best known path from start to destination and it's distance.
 
     unordered_map<graph::NodeID, graph::Weight> distances;              // This is the g(n).
 

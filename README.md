@@ -2,16 +2,17 @@
 
 A C++ graph library built from scratch, implementing common graph algorithms on a weighted, undirected graph.
 
-> **Status:** work in progress. Graph basics, Dijkstra (distances and routes), A*, DFS/BFS traversal, DFS/BFS route finding and `.dot` export are working, with assert-based tests. Bellman-Ford and directed edges are planned.
+> **Status:** work in progress. Graph basics, Dijkstra (distances and routes), A*, DFS/BFS traversal, DFS/BFS route finding, `.dot` export and input validation are working, with assert-based tests. Bellman-Ford and directed edges are planned.
 
 ## Features
 - Weighted adjacency-list graph. Nodes are integer IDs (`graph::NodeID`) created on first use or with `add_node`, so a node can exist with no edges
-- Edge weights are `double` (`graph::Weight`). An edge added without a weight gets weight 1
+- Edge weights are `double` (`graph::Weight`), finite and non-negative. An edge added without a weight gets weight 1
 - Undirected edges
 - Dijkstra's shortest path: distances to every node (`dijkstra`) and the lowest-weight route to one node (`path_dijkstra`)
 - A* search with a caller-supplied heuristic (`path_astar`)
 - Depth-first and breadth-first traversal (`dfs`, `bfs`)
 - Route finding between two nodes (`path_dfs`, `path_bfs`)
+- Input validation: nodes that don't exist and invalid weights are reported with `std::invalid_argument`
 - Export to Graphviz `.dot` format for visualization
 
 ## Usage
@@ -38,8 +39,9 @@ std::vector<int> fewest_edges   = g.path_bfs(1, 3);   // fewest edges
 
 // Lowest-weight route, with its total weight
 graph::PathResult best = g.path_dijkstra(1, 3);
-// best.path     the route from 1 to 3 (empty if unreachable)
-// best.distance its total weight (graph::unreachable if there is no route)
+// best.path                  the route from 1 to 3 (empty if unreachable)
+// best.distance              its total weight (graph::unreachable if there is no route)
+// best.numberOfExploredNodes how many entries the search took from its priority queue
 
 // A*: the same lowest-weight route, guided by an estimate of the remaining distance.
 // The estimate takes a node ID and returns a number. Here it is a Manhattan distance
@@ -52,6 +54,13 @@ auto manhattan = [=](int id) {
 graph::PathResult route = grid.path_astar(103, goal, manhattan);
 // Without a heuristic, path_astar(start, goal) behaves like path_dijkstra.
 
+// A node that isn't in the graph is an error, not an empty result
+try {
+    g.path_dijkstra(1, 99);             // there is no node 99
+} catch (const std::invalid_argument& e) {
+    std::cout << e.what() << "\n";      // No Node in graph with ID: 99
+}
+
 g.export_dot("graph");                  // writes graph.dot (the .dot extension is added)
 ```
 
@@ -59,6 +68,13 @@ To render the exported graph as an image (requires [Graphviz](https://graphviz.o
 ```
 dot -Tpng -Grankdir=LR graph.dot -o graph.png
 ```
+
+## Error handling
+- **A node that doesn't exist.** `dijkstra`, `dfs`, `bfs`, `path_dfs`, `path_bfs`, `path_dijkstra` and `path_astar` throw `std::invalid_argument` if a node you pass in isn't in the graph. The message names the ID, for example `No Node in graph with ID: 99`. The route functions check the start and the destination separately.
+- **No route is not an error.** If both nodes exist but nothing connects them, the route functions return an empty path, and `path_dijkstra` and `path_astar` set `distance` to `graph::unreachable` (positive infinity). A node created with `add_node` and given no edges is such a case. `dijkstra` holds `graph::unreachable` for every node it can't reach.
+- **Weights.** `add_edge` throws `std::invalid_argument` for a weight that is negative, NaN or infinite. Zero is allowed. Dijkstra and A* only work with non-negative weights, so this is checked when the edge is added.
+- **A rejected call changes nothing.** `add_edge` validates before it modifies the graph, so a call that throws doesn't leave a half-added edge or node behind.
+- **Node IDs** can be any `int`, including negative ones. They aren't validated.
 
 ## Build
 Requires CMake 3.20+ and a C++20 compiler.
@@ -69,13 +85,13 @@ cmake --build build
 This builds four programs in `build/`:
 - `GraphKit`: the demo. It shows DFS and BFS traversal, DFS/BFS/Dijkstra/A* routes on a 60-node graph, and an A* example on a grid.
 - `BenchDijkstra`: times Dijkstra on a random connected graph of 50,000 nodes.
-- `BenchAStar`: compares A* (Manhattan heuristic) with Dijkstra on grid graphs: the routes on a small map, and the total time over 100 routes on a 200x200 grid with obstacles.
+- `BenchAStar`: compares A* (Manhattan heuristic) with Dijkstra on grid graphs: the routes on a small map, and the time and the nodes explored over 100 routes on a 200x200 grid with obstacles.
 - `Tests`: the automated tests (see below).
 
 Timings are only meaningful in an optimized build. Configure with `-DCMAKE_BUILD_TYPE=Release` before running the benchmarks.
 
 ## Tests
-The tests are in `tests/test_graph.cpp`. They use plain `assert` and cover Dijkstra, A*, DFS and BFS: routes, distances, visit order, unreachable and missing nodes, isolated nodes (`add_node`), and edge cases (start equal to destination, zero-weight edges, duplicate edges, self-loops).
+The tests are in `tests/test_graph.cpp`. They use plain `assert` and cover Dijkstra, A*, DFS and BFS: routes, distances, visit order, unreachable nodes, isolated nodes (`add_node`), the exceptions for missing nodes and invalid weights, negative node IDs, and edge cases (start equal to destination, zero-weight edges, duplicate edges, self-loops).
 ```
 cmake --build build --target Tests
 ./build/Tests          # on Windows: build\Tests.exe
@@ -101,9 +117,7 @@ tests/
 - `path_dijkstra` returns the route with the **lowest total weight**, plus that weight. It can differ from the `path_bfs` route: the fewest edges isn't always the lowest weight.
 - `path_astar` returns the same lowest-weight route as `path_dijkstra`, but it examines fewer nodes when the heuristic is informative. The heuristic is a `std::function<graph::Weight(graph::NodeID)>`: a node ID in, an estimate of the remaining distance to the destination out, in the same units as the edge weights. The graph has no coordinates, so the caller supplies it.
 - For `path_astar` to return the lowest-weight route, the heuristic must never overestimate the true remaining distance, must return the same value every time it is called with the same node, and must be 0 at the destination. An overestimating heuristic can be faster but may return a longer route. The default heuristic is 0.
-- `dijkstra`, `path_dijkstra` and `path_astar` require **non-negative weights**. Negative weights aren't validated yet. On an undirected graph a negative weight can make the search give wrong results or never finish.
-- `graph::unreachable` (positive infinity) marks "no route". In `path_dijkstra` and `path_astar`, an empty `path` means there is no route, and `distance` is then `graph::unreachable`. In `dijkstra`, nodes that can't be reached from the source hold `graph::unreachable`.
-- If the start or destination node isn't in the graph, the traversal and route functions return an empty result, without printing anything. `dijkstra` with a missing source returns every node as unreachable. For now, a missing node can't be told apart from an unreachable one by looking at the result.
+- `numberOfExploredNodes` counts the entries `path_dijkstra` and `path_astar` take from their priority queue, including outdated entries that are skipped. It measures work without depending on the speed of the machine, so it is a fair way to compare the two algorithms.
 - `path_dijkstra` and `path_astar` set up distances lazily: only nodes the search reaches are touched, so a call costs time proportional to the search and not to the whole graph.
 - `add_edge` doesn't check for duplicates, so adding the same edge twice stores two parallel edges.
 - `export_dot(name)` writes `name.dot`. Pass the name without the extension: `export_dot("graph.dot")` creates `graph.dot.dot`.
@@ -111,14 +125,12 @@ tests/
 ## Performance
 `bench/bench_astar.cpp` (the `BenchAStar` target) compares Dijkstra and A* with a Manhattan heuristic on 100 random routes across a 200x200 grid with 25% obstacles. The grid and the routes are fixed by a seed, so every run uses the same ones, and both algorithms return the same distance for every route.
 
-| Algorithm | Total time for 100 routes |
-|---|---|
-| Dijkstra | 3022 ms |
-| A* (Manhattan heuristic) | 382 ms |
+| Algorithm | Total time for 100 routes | Nodes explored (100 routes) |
+|---|---|---|
+| Dijkstra | 3022 ms | 1,556,459 |
+| A* (Manhattan heuristic) | 382 ms | 189,681 |
 
-A* is about 8 times faster here, because the heuristic steers it toward the goal and it expands far fewer nodes. The absolute times depend on the machine and the build, so look at the ratio, and use a Release build when you run it yourself.
-
-Both searches set up their distances lazily: only the nodes a search actually reaches are touched, so a call costs time proportional to the search and not to the size of the whole graph.
+A* is about 8 times faster here, because the heuristic steers it toward the goal and it explores about 8 times fewer nodes. The absolute times depend on the machine and the build, so look at the ratio, and use a Release build when you run it yourself.
 
 ## Complexity
 | Function | Time |
@@ -137,7 +149,8 @@ Both searches set up their distances lazily: only the nodes a search actually re
 - [x] A* search (`path_astar`)
 - [x] Automated tests (assert-based)
 - [x] `add_node` and isolated nodes
-- [ ] Directed edges and input validation
+- [x] Input validation (exceptions for missing nodes and invalid weights)
+- [ ] Directed edges
 - [ ] Bellman-Ford (negative weights)
 
 ## Development notes
