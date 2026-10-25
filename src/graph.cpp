@@ -187,35 +187,35 @@ std::vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID de
     std::vector<graph::NodeID> result;
 
     std::unordered_set<graph::NodeID> visited;
-    std::stack<std::pair<graph::NodeID, graph::NodeID>> st;
-    std::unordered_map<graph::NodeID,graph::NodeID> parent;
-    st.push({start, -1});                         //-1 for the starting node with no parents.
+    std::stack<graph::Visit> st;
+    std::unordered_map<graph::NodeID,graph::NodeID> parentOf;
+    st.push({start, start});                         // Start is its own parent.
 
     while(!st.empty()){
-        auto currentPair = st.top();
+        auto current = st.top();
         st.pop();
 
-        if(visited.count(currentPair.first) == 1) continue;
-        parent[currentPair.first] = currentPair.second;
+        if(visited.count(current.node) == 1) continue;
+        parentOf[current.node] = current.parent;
 
-        if(currentPair.first == destination){
+        if(current.node == destination){
             graph::NodeID next = destination;
             while (next != start){
                 result.push_back(next);
-                next = parent[next];
+                next = parentOf[next];
             }
             result.push_back(start);
             std::reverse(result.begin(), result.end());
             break;
         }
 
-        visited.insert(currentPair.first);                    // Marked visited.
+        visited.insert(current.node);                    // Marked visited.
 
-        for(const auto& edge : adjlist.at(currentPair.first)){  // Returns an iterator to the pair whose key is currentNode.
+        for(const auto& edge : adjlist.at(current.node)){  // Returns an iterator to the pair whose key is currentNode.
             if(visited.count(edge.targetNode) == 1){
                 continue;
             }
-            st.push({edge.targetNode, currentPair.first});
+            st.push({edge.targetNode, current.node});
         }
     }
     return result;
@@ -233,35 +233,35 @@ std::vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID de
     std::vector<graph::NodeID> result;
 
     std::unordered_set<graph::NodeID> visited;
-    std::queue<std::pair<graph::NodeID, graph::NodeID>> q;
-    std::unordered_map<graph::NodeID,graph::NodeID> parent;
-    q.push({start, -1});                         //-1 for the starting node with no parents.
+    std::queue<graph::Visit> q;
+    std::unordered_map<graph::NodeID,graph::NodeID> parentOf;
+    q.push({start, start});                         // Start is its own parent.
 
     while(!q.empty()){
-        auto currentPair = q.front();
+        auto current = q.front();
         q.pop();
 
-        if(visited.count(currentPair.first) == 1) continue;
-        parent[currentPair.first] = currentPair.second;
+        if(visited.count(current.node) == 1) continue;
+        parentOf[current.node] = current.parent;
 
-        if(currentPair.first == destination){
+        if(current.node == destination){
             graph::NodeID next = destination;
             while (next != start){
                 result.push_back(next);
-                next = parent[next];
+                next = parentOf[next];
             }
             result.push_back(start);
             std::reverse(result.begin(), result.end());
             break;
         }
 
-        visited.insert(currentPair.first);                    // Marked visited.
+        visited.insert(current.node);                    // Marked visited.
 
-        for(const auto& edge : adjlist.at(currentPair.first)){      // Returns an iterator to the pair whose key is currentNode.
+        for(const auto& edge : adjlist.at(current.node)){      // Returns an iterator to the pair whose key is currentNode.
             if(visited.count(edge.targetNode) == 1){
                 continue;
             }
-            q.push({edge.targetNode, currentPair.first});
+            q.push({edge.targetNode, current.node});
         }
     }
     return result;
@@ -284,7 +284,7 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
     std::unordered_map<graph::NodeID, graph::NodeID> parent;
 
     distances[start] = 0;
-    parent[start] = -1;
+    parent[start] = start;
     pq.push({0, start});
 
 
@@ -343,7 +343,7 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
     std::unordered_map<graph::NodeID, graph::NodeID> parent;
 
     distances[start] = 0;
-    parent[start] = -1;
+    parent[start] = start;
     pq.push({heuristic(start),start});
 
     while(!pq.empty()){

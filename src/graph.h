@@ -29,6 +29,11 @@ private:
         auto operator<=>(const QueueEntry&) const = default;            //std::strong_ordering for int, std::partial_ordering for double.
     };
 
+    struct Visit {
+        NodeID node;
+        NodeID parent;
+    };
+
     std::unordered_map<NodeID, std::list<Edge>> adjlist;
 
 public:
