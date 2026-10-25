@@ -14,9 +14,16 @@ A C++ graph library built from scratch, implementing common graph algorithms on 
 - Route finding between two nodes (`path_dfs`, `path_bfs`)
 - Input validation: nodes that don't exist and invalid weights are reported with `std::invalid_argument`
 - Export to Graphviz `.dot` format for visualization
+- Everything lives in the `graphkit` namespace, and the library doesn't pull anything from `std` into your code
 
 ## Usage
+The library is in the `graphkit` namespace. In a `.cpp` file you can write `graphkit::graph` everywhere, or bring the one name in with `using graphkit::graph;` (put that line in `.cpp` files only, never in a header). The examples below, and the rest of this README, use the short form `graph`.
+
 ```cpp
+#include "graph.h"
+
+using graphkit::graph;                  // or write graphkit::graph below
+
 graph g;
 g.add_edge(1, 2, 7);
 g.add_edge(2, 3, 5.5);
@@ -112,6 +119,7 @@ tests/
 ```
 
 ## Notes
+- All names are in the `graphkit` namespace. Nested names such as `graph::PathResult`, `graph::NodeID`, `graph::Weight` and `graph::unreachable` are written here without the `graphkit::` prefix, as if `using graphkit::graph;` were in effect. Without that line, write `graphkit::graph::PathResult` and so on.
 - `dfs` and `bfs` return the **order in which nodes are visited**, not a route. Consecutive entries aren't necessarily connected by an edge.
 - `path_dfs` returns **a** route from start to destination, which is usually not the shortest. `path_bfs` returns a route with the **fewest edges**. Neither uses edge weights.
 - `path_dijkstra` returns the route with the **lowest total weight**, plus that weight. It can differ from the `path_bfs` route: the fewest edges isn't always the lowest weight.
@@ -150,6 +158,7 @@ A* is about 8 times faster here, because the heuristic steers it toward the goal
 - [x] Automated tests (assert-based)
 - [x] `add_node` and isolated nodes
 - [x] Input validation (exceptions for missing nodes and invalid weights)
+- [x] `graphkit` namespace
 - [ ] Directed edges
 - [ ] Bellman-Ford (negative weights)
 

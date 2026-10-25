@@ -7,6 +7,7 @@
 #include <functional>
 #include <string>
 
+namespace graphkit{
 
 class graph{
 public:
@@ -58,3 +59,4 @@ public:
     PathResult path_dijkstra(NodeID start, NodeID destination) const;
     PathResult path_astar(NodeID start, NodeID destination, std::function<Weight(NodeID)> heuristic = [](NodeID){ return 0; }) const;
 };
+}       // namespace graphkit

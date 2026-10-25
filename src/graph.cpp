@@ -11,6 +11,8 @@
 #include <cmath>
 #include <string>
 
+using graphkit::graph;
+
 bool graph::add_node(graph::NodeID id){
     return adjlist.try_emplace(id).second;
 }

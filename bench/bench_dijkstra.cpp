@@ -9,6 +9,8 @@
 
 #include "graph.h"
 
+using graphkit::graph;
+
 int main() {
     const int N = 50000;             // number of nodes
     const int EXTRA_EDGES = 150000;  // extra edges beyond the spanning tree

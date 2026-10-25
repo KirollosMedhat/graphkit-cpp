@@ -7,6 +7,7 @@
 #include "sample_graph.h"
 
 using namespace std;
+using graphkit::graph;
 
 // To render the exported graph as an image:
 //   dot -Tpng -Grankdir=LR graph.dot -o graph.png

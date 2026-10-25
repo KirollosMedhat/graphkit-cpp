@@ -4,7 +4,7 @@
 /// Builds the 60-node weighted sample graph used by the demo.
 /// Edges are added in a fixed order, so DFS/BFS results are reproducible.
 /// Edges that originally had no explicit weight are listed with weight 1.
-inline graph make_sample_graph() {
+inline graphkit::graph make_sample_graph() {
     struct Edge { int u, v, w; };
     static const Edge edges[] = {
         {1, 46, 10}, {1, 25, 12}, {1, 55, 1}, {46, 13, 13}, {25, 18, 2}, {46, 22, 14},
@@ -24,7 +24,7 @@ inline graph make_sample_graph() {
         {8, 16, 4}, {5, 22, 1}, {38, 36, 4}, {38, 15, 1}, {5, 46, 11}, {4, 15, 2},
     };
 
-    graph g;
+    graphkit::graph g;
     for (const auto& e : edges) {
         g.add_edge(e.u, e.v, e.w);
     }

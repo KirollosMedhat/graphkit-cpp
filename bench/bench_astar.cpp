@@ -10,6 +10,8 @@
 
 #include "graph.h"
 
+using graphkit::graph;
+
 // Node ID = y * width + x. '#' is a wall; every other cell connects to its right and lower neighbor.
 static graph make_grid(const std::vector<std::string>& rows) {
     graph g;

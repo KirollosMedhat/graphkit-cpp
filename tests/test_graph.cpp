@@ -10,6 +10,8 @@
 
 #include "graph.h"
 
+using graphkit::graph;
+
 bool throws_invalid_argument(const std::function<void()>& action){
     try{
         action();
