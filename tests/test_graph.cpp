@@ -23,7 +23,6 @@ bool throws_invalid_argument(const std::function<void()>& action){
 
 void test_dijkstra_finds_lowest_cost_route() {
     graph g;
-    g.add_edge(1, 2, 3);
     g.add_edge(1, 3, 1);
     g.add_edge(2, 4, 2);
     g.add_edge(3, 4, 5);
@@ -60,15 +59,23 @@ void test_dijkstra_unreachable_destination() {
     assert(result4.path.empty());
 }
 
-void test_dijkstra_start_equals_destination(){
+void test_start_equals_destination_for_every_route_function(){
     graph g;
     g.add_edge(1, 2, 5);
-    g.add_edge(3, 4, 2);
+    g.add_edge(2, 3, 2);
+
+    std::vector<graph::NodeID> only_one = {1};
+
+    assert(g.path_dfs(1, 1) == only_one);
+    assert(g.path_bfs(1, 1) == only_one);
+
+    auto astar = g.path_astar(1, 1);
+    assert(astar.path == only_one);
+    assert(astar.distance == 0);
 
     auto result = g.path_dijkstra(1, 1);
-    std::vector<int> correct_path = {1};
     assert(result.distance == 0);
-    assert(result.path == correct_path);
+    assert(result.path == only_one);
 }
 
 void test_astar_zero_heuristic_matches_dijkstra() {
@@ -83,6 +90,7 @@ void test_astar_zero_heuristic_matches_dijkstra() {
     auto astar_result = g.path_astar(1,4);
 
     assert(astar_result.distance == dijkstra_result.distance);
+    assert(astar_result.path == dijkstra_result.path);
     assert(!astar_result.path.empty());
 }
 
@@ -424,11 +432,88 @@ void test_negative_node_ids_are_accepted(){
     assert(g.dfs(-9) == only_minus_nine);
 }
 
+void test_explored_nodes_start_equals_destination(){
+    graph g;
+    g.add_edge(1, 2, 1);
+    g.add_edge(2, 3, 1);
+
+    assert(g.path_dijkstra(1, 1).numberOfExploredNodes == 1);
+    assert(g.path_astar(1, 1).numberOfExploredNodes == 1);
+}
+
+void test_explored_nodes_when_there_is_no_route(){
+    graph g;
+    g.add_edge(1, 2, 1);
+    g.add_edge(2, 3, 1);
+    g.add_node(9);
+
+    assert(g.path_dijkstra(1, 9).numberOfExploredNodes == 3);
+    assert(g.path_astar(1, 9).numberOfExploredNodes == 3);
+}
+
+
+void test_explored_nodes_includes_outdated_queue_entries(){
+    graph g;
+    g.add_edge(1, 2, 3);
+    g.add_edge(1, 3, 1);
+    g.add_edge(2, 4, 2);
+    g.add_edge(3, 4, 5);
+    g.add_edge(3, 2, 1);
+
+    // node 2 is queued twice (first at 3, then at 2), so one pop is an outdated entry
+    assert(g.path_dijkstra(1, 4).numberOfExploredNodes == 5);
+}
+
+void test_astar_default_heuristic_explores_like_dijkstra(){
+    graph g;
+    g.add_edge(1, 2, 3);
+    g.add_edge(1, 3, 1);
+    g.add_edge(2, 4, 2);
+    g.add_edge(3, 4, 5);
+    g.add_edge(3, 2, 1);
+
+    auto dijkstra = g.path_dijkstra(1, 4);
+    auto astar = g.path_astar(1, 4);
+
+    assert(astar.numberOfExploredNodes == dijkstra.numberOfExploredNodes);
+}
+
+void test_astar_calls_the_heuristic_it_is_given(){
+    graph g;
+    g.add_edge(1, 2, 1);
+    g.add_edge(2, 3, 1);
+
+    int calls = 0;
+    auto counting = [&](graph::NodeID){ ++calls; return 0.0; };
+
+    g.path_astar(1, 3, counting);
+    assert(calls > 0);
+}
+
+void test_edges_can_be_walked_in_both_directions(){
+    graph g;
+    g.add_edge(1, 2, 5);
+    g.add_edge(3, 2, 2);                       // both edges have node 2 as the second argument
+
+    std::vector<graph::NodeID> forward  = {1, 2, 3};
+    std::vector<graph::NodeID> backward = {3, 2, 1};
+
+    assert(g.path_bfs(1, 3) == forward);
+    assert(g.path_bfs(3, 1) == backward);
+    assert(g.path_dfs(1, 3) == forward);
+    assert(g.path_dfs(3, 1) == backward);
+
+    assert(g.path_dijkstra(1, 3).distance == 7);
+    assert(g.path_dijkstra(3, 1).distance == 7);
+
+    assert(g.dfs(2).size() == 3);
+    assert(g.bfs(2).size() == 3);
+}
+
 int main(){
 
     test_dijkstra_finds_lowest_cost_route();
     test_dijkstra_unreachable_destination();
-    test_dijkstra_start_equals_destination();
 
     test_astar_zero_heuristic_matches_dijkstra();
     test_astar_manhattan_heuristic_finds_optimal_path();
@@ -457,6 +542,17 @@ int main(){
     test_negative_node_ids_are_accepted();
     test_add_edge_accepts_valid_weights();
     test_add_edge_rejects_invalid_weights();
+
+    test_start_equals_destination_for_every_route_function();
+
+    
+    test_explored_nodes_includes_outdated_queue_entries();
+    test_explored_nodes_when_there_is_no_route();
+    test_explored_nodes_start_equals_destination();
+    test_astar_calls_the_heuristic_it_is_given();
+    test_astar_default_heuristic_explores_like_dijkstra();
+
+    test_edges_can_be_walked_in_both_directions();
 
     std::cout << "All tests passed\n";
 
