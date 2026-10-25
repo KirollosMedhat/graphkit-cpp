@@ -281,10 +281,10 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
     std::unordered_map<graph::NodeID, graph::Weight> distances;                 
     std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;        //min-priority Queue.
     // <Node ID, Parent ID>
-    std::unordered_map<graph::NodeID, graph::NodeID> parent;
+    std::unordered_map<graph::NodeID, graph::NodeID> parentOf;
 
     distances[start] = 0;
-    parent[start] = start;
+    parentOf[start] = start;
     pq.push({0, start});
 
 
@@ -299,7 +299,7 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
             graph::NodeID next = destination;
             while (next != start){
                 result.path.push_back(next);
-                next = parent[next];
+                next = parentOf[next];
             }
             result.path.push_back(start);
             std::reverse(result.path.begin(), result.path.end());
@@ -316,7 +316,7 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
             if(newDistance < distances[edge.targetNode]){
                 distances[edge.targetNode] = newDistance;
                 pq.push({distances[edge.targetNode], edge.targetNode});
-                parent[edge.targetNode] = current.node;
+                parentOf[edge.targetNode] = current.node;
             }
         }
     }
@@ -340,10 +340,10 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
     // g(n) is the cost from start to current node and h(n) is the estimate from current node to the destination.
     std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;
 
-    std::unordered_map<graph::NodeID, graph::NodeID> parent;
+    std::unordered_map<graph::NodeID, graph::NodeID> parentOf;
 
     distances[start] = 0;
-    parent[start] = start;
+    parentOf[start] = start;
     pq.push({heuristic(start),start});
 
     while(!pq.empty()){
@@ -358,7 +358,7 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
             graph::NodeID next = destination;
             while (next != start){
                 result.path.push_back(next);
-                next = parent[next];
+                next = parentOf[next];
             }
             result.path.push_back(start);
             std::reverse(result.path.begin(), result.path.end());
@@ -377,7 +377,7 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
 
                 distances[edge.targetNode] = newDistance;
                 pq.push({neighborF, edge.targetNode});
-                parent[edge.targetNode] = current.node;
+                parentOf[edge.targetNode] = current.node;
             }
         }
     }
