@@ -63,7 +63,7 @@ std::unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID s
         
     }
 
-    // Loop will run as long as there are nodes queued in the priority queue, while any node is still waiting to be processed.
+    // Loop will run as long as there are nodes queued in the priority queue.
     while(!pq.empty()){
         auto current = pq.top();                               // A copy: pop() would invalidate a reference.
         pq.pop();
@@ -105,7 +105,7 @@ void graph::export_dot(const std::string& filename) const{
 // Depth-first traversal from `start`. Returns the nodes in the order they were
 // visited. This is a visit order, not a route: consecutive entries aren't
 // necessarily connected by an edge, because DFS backtracks after a dead end.
-// Only nodes reachable from `start` appear. Returns an empty vector if `start`
+// Only nodes reachable from `start` appear. throws std::invalid_argument if `start`
 // isn't in the graph. Edge weights are ignored. Time: O(V + E).
 // V is the number of vertices, meaning the nodes. E is the number of edges.
 std::vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
@@ -134,7 +134,7 @@ std::vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
         visited.insert(currentNode);                    // Marked as processed.
         order.push_back(currentNode);                   // Record it in the visit order(Output vector).
 
-        // Each element is a (neighbor ID, edge weight) pair.
+        // Each element is an Edge a struct with targetNode and weight.
         for(const auto& edge : adjlist.at(currentNode)){        
             // Skip neighbors that are already processed. This is only an optimization.
             // It can't catch a neighbor that is queued but not yet processed, which is
@@ -289,7 +289,7 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
 
 
     while(!pq.empty()){
-        auto current = pq.top();                               // Getting the highest priority node from the queue.
+        auto current = pq.top();                               // Getting the closest node from the queue.
         pq.pop();                                                       // Removing it from the queue.
         result.numberOfExploredNodes++;
 
@@ -332,11 +332,11 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
     if(adjlist.count(destination) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
     }
-    PathResult result;                               // Output: best known path from start to destination and it's distance.
+    PathResult result;                               // Output: best known path from start to destination and its distance.
 
     std::unordered_map<graph::NodeID, graph::Weight> distances;              // This is the g(n).
 
-    // Min-priority queue of {f(n), node ID} pairs. Where f(n) = g(n) + h(n), 
+    // Min-priority queue of QueueEntry objects. Where f(n) = g(n) + h(n), 
     // g(n) is the cost from start to current node and h(n) is the estimate from current node to the destination.
     std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;
 
