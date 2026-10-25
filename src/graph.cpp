@@ -211,7 +211,7 @@ std::vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID de
 
         visited.insert(current.node);                    // Marked visited.
 
-        for(const auto& edge : adjlist.at(current.node)){  // Returns an iterator to the pair whose key is currentNode.
+        for(const auto& edge : adjlist.at(current.node)){
             if(visited.count(edge.targetNode) == 1){
                 continue;
             }
@@ -257,7 +257,7 @@ std::vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID de
 
         visited.insert(current.node);                    // Marked visited.
 
-        for(const auto& edge : adjlist.at(current.node)){      // Returns an iterator to the pair whose key is currentNode.
+        for(const auto& edge : adjlist.at(current.node)){
             if(visited.count(edge.targetNode) == 1){
                 continue;
             }
