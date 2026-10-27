@@ -17,14 +17,23 @@ bool graph::add_node(graph::NodeID id){
     return adjlist.try_emplace(id).second;
 }
 
+void graph::add_directed_edge(graph::NodeID u, graph::NodeID v, graph::Weight w){
+    if(w < 0 || !std::isfinite(w)){
+        throw std::invalid_argument("Weight must be finite and non-negative.");
+    }
+    add_node(u);
+    add_node(v);
+    adjlist.at(u).push_back({v,w, false});
+}
+
 void graph::add_edge(graph::NodeID u, graph::NodeID v, graph::Weight w){
     if(w < 0 || !std::isfinite(w)){
         throw std::invalid_argument("Weight must be finite and non-negative.");
     }
     add_node(u);
     add_node(v);
-    adjlist.at(u).push_back({v,w});
-    adjlist.at(v).push_back({u,w});
+    adjlist.at(u).push_back({v, w, true});
+    adjlist.at(v).push_back({u, w, true});
 }
 
 void graph::print() const{
@@ -89,14 +98,17 @@ std::unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID s
 void graph::export_dot(const std::string& filename) const{
     std::ofstream outFile(filename + ".dot", std::ios::out | std::ios::trunc);
 
-    outFile << "graph G {\n";
+    outFile << "digraph G {\n";
     for (const auto& i : adjlist) {
-        outFile << i.first << ";\n";                     // declares the node, even if it has no edges
+        outFile << i.first << ";\n";
 
         for(const auto& k : i.second){
-            if (i.first < k.targetNode) {
-                outFile << i.first << " -- " << k.targetNode << " [label=\"" << k.weight << "\"];\n";
-            }
+            // an undirected edge is stored twice (once from each end): write it only from the smaller ID
+            if (k.undirected && i.first >= k.targetNode) continue;
+
+            outFile << i.first << " -> " << k.targetNode << " [label=\"" << k.weight << "\"";
+            if (k.undirected) outFile << ", dir=none";
+            outFile << "];\n";
         }
     }
     outFile << "}\n";

@@ -122,5 +122,24 @@ int main() {
     traversal_demo();
     routes_demo();
     astar_demo();
+
+
+    graph g;
+ 
+    g.add_edge(1, 2, 4);              // two-way road
+    g.add_edge(2, 3, 3);              // two-way road
+    g.add_edge(2, 6, 6);              // two-way road
+ 
+    g.add_directed_edge(3, 4, 2);     // one-way street
+    g.add_directed_edge(4, 5, 1);     // one-way street
+ 
+    g.add_directed_edge(5, 6, 7);     // uphill: expensive
+    g.add_directed_edge(6, 5, 2);     // downhill: cheap (a different cost for the way back)
+ 
+    g.add_directed_edge(6, 1, 5);     // one-way, from a HIGHER id back to a lower one
+ 
+    g.add_node(9);                    // a place with no roads at all
+ 
+    g.export_dot("sample");
     return 0;
 }

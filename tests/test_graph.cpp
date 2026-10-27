@@ -510,6 +510,79 @@ void test_edges_can_be_walked_in_both_directions(){
     assert(g.bfs(2).size() == 3);
 }
 
+
+void test_directed_edge_cannot_be_walked_backwards(){
+    graph g;
+    g.add_directed_edge(1, 2, 5);
+
+    std::vector<graph::NodeID> forward = {1, 2};
+
+    assert(g.path_bfs(1, 2) == forward);
+    assert(g.path_dfs(1, 2) == forward);
+    assert(g.path_dijkstra(1, 2).distance == 5);
+
+    // both nodes exist, so nothing throws: there is simply no route back
+    assert(g.path_bfs(2, 1).empty());
+    assert(g.path_dfs(2, 1).empty());
+    assert(g.path_dijkstra(2, 1).path.empty());
+    assert(g.path_dijkstra(2, 1).distance == graph::unreachable);
+    assert(g.path_astar(2, 1).path.empty());
+    assert(g.dfs(2).size() == 1);                  // from node 2 only node 2 itself is reachable
+}
+
+void test_directed_edges_with_different_costs_each_way(){
+    graph g;
+    g.add_directed_edge(1, 2, 4);
+    g.add_directed_edge(2, 1, 9);
+
+    assert(g.path_dijkstra(1, 2).distance == 4);
+    assert(g.path_dijkstra(2, 1).distance == 9);
+    assert(g.path_astar(1, 2).distance == 4);
+    assert(g.path_astar(2, 1).distance == 9);
+    assert(g.dijkstra(1).at(2) == 4);
+    assert(g.dijkstra(2).at(1) == 9);
+}
+
+void test_mixed_directed_and_undirected_edges(){
+    graph g;
+    g.add_directed_edge(1, 2, 4);                  // one-way
+    g.add_directed_edge(2, 3, 1);                  // one-way
+    g.add_edge(3, 4, 2);                           // two-way
+    g.add_directed_edge(4, 1, 9);                  // one-way, from a higher ID back to a lower one
+
+    std::vector<graph::NodeID> two_to_one = {2, 3, 4, 1};
+
+    assert(g.path_dijkstra(1, 4).distance == 7);   // 1 -> 2 -> 3 -> 4
+    assert(g.path_dijkstra(4, 2).distance == 13);  // 4 -> 1 -> 2
+    assert(g.path_dijkstra(4, 3).distance == 2);   // the two-way edge, walked backwards
+    assert(g.path_dijkstra(3, 1).distance == 11);  // 3 -> 4 -> 1
+    assert(g.path_bfs(2, 1) == two_to_one);        // the only route from 2 to 1
+}
+
+void test_rejected_directed_edge_changes_nothing(){
+    graph g;
+    assert(throws_invalid_argument([&](){ g.add_directed_edge(1, 2, -1); }));
+    assert(throws_invalid_argument([&](){ g.add_directed_edge(1, 2, std::numeric_limits<graph::Weight>::quiet_NaN()); }));
+    assert(throws_invalid_argument([&](){ g.add_directed_edge(1, 2, std::numeric_limits<graph::Weight>::infinity()); }));
+
+    // none of the rejected calls may have added a node: node 1 must still not exist
+    assert(throws_invalid_argument([&](){ g.dfs(1); }));
+}
+
+void test_two_opposite_directed_edges_behave_like_one_undirected_edge(){
+    graph directed_pair;
+    directed_pair.add_directed_edge(1, 2, 3);
+    directed_pair.add_directed_edge(2, 1, 3);
+
+    graph undirected;
+    undirected.add_edge(1, 2, 3);
+
+    assert(directed_pair.path_dijkstra(1, 2).distance == undirected.path_dijkstra(1, 2).distance);
+    assert(directed_pair.path_dijkstra(2, 1).distance == undirected.path_dijkstra(2, 1).distance);
+    assert(directed_pair.path_bfs(2, 1) == undirected.path_bfs(2, 1));
+    assert(directed_pair.dfs(1) == undirected.dfs(1));
+}
+
 int main(){
 
     test_dijkstra_finds_lowest_cost_route();
@@ -553,6 +626,12 @@ int main(){
     test_astar_default_heuristic_explores_like_dijkstra();
 
     test_edges_can_be_walked_in_both_directions();
+
+    test_rejected_directed_edge_changes_nothing();
+    test_directed_edges_with_different_costs_each_way();
+    test_directed_edge_cannot_be_walked_backwards();
+    test_mixed_directed_and_undirected_edges();
+    test_two_opposite_directed_edges_behave_like_one_undirected_edge();
 
     std::cout << "All tests passed\n";
 

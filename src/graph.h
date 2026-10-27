@@ -20,6 +20,7 @@ private:
     struct Edge {
         NodeID targetNode;
         Weight weight;
+        bool undirected = false;
     };
     
     struct QueueEntry {
@@ -49,6 +50,7 @@ public:
     /// @param v The other endpoint.
     /// @param w Edge weight; defaults to 1 so unweighted graphs get hop counts.
     void add_edge(NodeID u, NodeID v, Weight w = 1);
+    void add_directed_edge(NodeID u, NodeID v, Weight w = 1);
     bool add_node(NodeID id);
 
     //Utils
