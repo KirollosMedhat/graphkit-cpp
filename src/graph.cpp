@@ -18,6 +18,7 @@ bool graph::add_node(graph::NodeID id){
 }
 
 void graph::add_directed_edge(graph::NodeID u, graph::NodeID v, graph::Weight w){
+    // validate first, so a rejected call changes nothing
     if(w < 0 || !std::isfinite(w)){
         throw std::invalid_argument("Weight must be finite and non-negative.");
     }
@@ -27,12 +28,13 @@ void graph::add_directed_edge(graph::NodeID u, graph::NodeID v, graph::Weight w)
 }
 
 void graph::add_edge(graph::NodeID u, graph::NodeID v, graph::Weight w){
+    // validate first, so a rejected call changes nothing
     if(w < 0 || !std::isfinite(w)){
         throw std::invalid_argument("Weight must be finite and non-negative.");
     }
     add_node(u);
     add_node(v);
-    adjlist.at(u).push_back({v, w, true});
+    adjlist.at(u).push_back({v, w, true});      // two-way: stored once from each end
     adjlist.at(v).push_back({u, w, true});
 }
 
@@ -47,20 +49,17 @@ void graph::print() const{
     }
 }
 
-// Dijkstra's algorithm: shortest distance from `source` to every node.
-// Requires non-negative weights: that is what makes a node's distance final once it is popped.
-// Unreachable nodes keep graph::unreachable.
+// Needs non-negative weights: a node's distance is final once it is popped.
 std::unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID source) const{
     if(adjlist.count(source) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(source));
     }
-    std::unordered_map<graph::NodeID, graph::Weight> distances;                  // Best known distance from source to each node.
+    std::unordered_map<graph::NodeID, graph::Weight> distances;                  // best known distance per node
 
-    // Min-queue of {priority, node}. Here the priority is the distance from source,
-    // so the closest unprocessed node comes out first.
-    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;        //min-priority Queue.
+    // min-queue: the closest node comes out first
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;
 
-    // Every node starts at "infinity"; the source starts at 0.
+    // every node starts at infinity, the source at 0
     for (const auto& i: adjlist){
 
         if(i.first != source){
@@ -72,20 +71,18 @@ std::unordered_map<graph::NodeID, graph::Weight> graph::dijkstra(graph::NodeID s
         
     }
 
-    // Loop will run as long as there are nodes queued in the priority queue.
     while(!pq.empty()){
-        auto current = pq.top();                               // A copy: pop() would invalidate a reference.
+        auto current = pq.top();                               // copy: pop() would invalidate a reference
         pq.pop();
 
-        // Stale entry: a shorter route to this node was found after it was queued. Skip it.
+        // outdated entry: a shorter route was found after it was queued
         if (current.priority > distances[current.node]) continue;        
 
-        // Try to shorten the distance to each neighbor by going through the current node.
         for(const auto& edge : adjlist.at(current.node)){
             
             graph::Weight newDistance = distances[current.node] + edge.weight;  
             
-            // Better route: record it and queue the neighbor (any older entry is now stale).
+            // shorter route through current: record it and queue the neighbor
             if(newDistance < distances[edge.targetNode]){
                 distances[edge.targetNode] = newDistance;
                 pq.push({distances[edge.targetNode], edge.targetNode});
@@ -114,48 +111,36 @@ void graph::export_dot(const std::string& filename) const{
     outFile << "}\n";
 }
 
-// Depth-first traversal from `start`. Returns the nodes in the order they were
-// visited. This is a visit order, not a route: consecutive entries aren't
-// necessarily connected by an edge, because DFS backtracks after a dead end.
-// Only nodes reachable from `start` appear. throws std::invalid_argument if `start`
-// isn't in the graph. Edge weights are ignored. Time: O(V + E).
-// V is the number of vertices, meaning the nodes. E is the number of edges.
+// Time: O(V + E), where V = nodes and E = edges.
 std::vector<graph::NodeID> graph::dfs(graph::NodeID start) const{
     if(adjlist.count(start) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(start));
     }
-    std::vector<graph::NodeID> order;                                  // Output: nodes in the order they were processed.
+    std::vector<graph::NodeID> order;
 
-    // visited means "already processed", not "already queued". A node can sit on the
-    // stack several times; only the first copy that is popped gets processed.
+    // visited = processed, not queued: a node can be on the stack more than once
     std::unordered_set<graph::NodeID> visited;
-    std::stack<graph::NodeID> st;                                      // Nodes waiting to be processed; the most recently pushed comes out first (LIFO).
+    std::stack<graph::NodeID> st;
     st.push(start);
 
     while(!st.empty()){
         graph::NodeID currentNode = st.top();
-        st.pop();                                       // Always remove the entry first, so every iteration makes progress.
+        st.pop();
 
-        // A copy of this node was already processed earlier, so this entry is a
-        // leftover. This is why the check happens on pop, not on push: a node can be
-        // pushed again by a deeper node before it has been processed.
+        // checked on pop, not on push: a deeper node may have queued it again meanwhile
         if(visited.count(currentNode) == 1){
             continue;
         }
 
-        visited.insert(currentNode);                    // Marked as processed.
-        order.push_back(currentNode);                   // Record it in the visit order(Output vector).
+        visited.insert(currentNode);
+        order.push_back(currentNode);
 
-        // Each element is an Edge a struct with targetNode and weight.
         for(const auto& edge : adjlist.at(currentNode)){        
-            // Skip neighbors that are already processed. This is only an optimization.
-            // It can't catch a neighbor that is queued but not yet processed, which is
-            // what the pop-time check above is for.
+            // skip processed neighbors (only an optimization)
             if(visited.count(edge.targetNode) == 1){
                 continue;
             }
-            // The last neighbor pushed is popped first, which is why DFS goes
-            // deep before it backtracks to the earlier neighbors.
+            // the last neighbor pushed is visited first: DFS goes deep before backtracking
             st.push(edge.targetNode);
         }
     }
@@ -181,7 +166,7 @@ std::vector<graph::NodeID> graph::bfs(graph::NodeID start) const{
         for(const auto& edge : adjlist.at(currentNode)){
             if(visited.count(edge.targetNode) == 1) continue;
             q.push(edge.targetNode);
-            visited.insert(edge.targetNode);                         //Mark visited on discovery, so a node is queued only once. Differs from the DFS.
+            visited.insert(edge.targetNode);                         // marked on discovery, so each node is queued once (DFS marks on pop)
         }
     }
     return order;
@@ -201,16 +186,17 @@ std::vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID de
     std::unordered_set<graph::NodeID> visited;
     std::stack<graph::Visit> st;
     std::unordered_map<graph::NodeID,graph::NodeID> parentOf;
-    st.push({start, start});                         // Start is its own parent.
+    st.push({start, start});                         // start is its own parent: the walk back stops at start, so this is never read
 
     while(!st.empty()){
         auto current = st.top();
         st.pop();
 
         if(visited.count(current.node) == 1) continue;
-        parentOf[current.node] = current.parent;
+        parentOf[current.node] = current.parent;        // the first copy popped decides the parent
 
         if(current.node == destination){
+            // walk back from destination to start, then reverse
             graph::NodeID next = destination;
             while (next != start){
                 result.push_back(next);
@@ -221,7 +207,7 @@ std::vector<graph::NodeID> graph::path_dfs(graph::NodeID start, graph::NodeID de
             break;
         }
 
-        visited.insert(current.node);                    // Marked visited.
+        visited.insert(current.node);
 
         for(const auto& edge : adjlist.at(current.node)){
             if(visited.count(edge.targetNode) == 1){
@@ -247,16 +233,17 @@ std::vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID de
     std::unordered_set<graph::NodeID> visited;
     std::queue<graph::Visit> q;
     std::unordered_map<graph::NodeID,graph::NodeID> parentOf;
-    q.push({start, start});                         // Start is its own parent.
+    q.push({start, start});                         // start is its own parent: the walk back stops at start, so this is never read
 
     while(!q.empty()){
         auto current = q.front();
         q.pop();
 
         if(visited.count(current.node) == 1) continue;
-        parentOf[current.node] = current.parent;
+        parentOf[current.node] = current.parent;        // the first copy popped decides the parent
 
         if(current.node == destination){
+            // walk back from destination to start, then reverse
             graph::NodeID next = destination;
             while (next != start){
                 result.push_back(next);
@@ -267,7 +254,7 @@ std::vector<graph::NodeID> graph::path_bfs(graph::NodeID start, graph::NodeID de
             break;
         }
 
-        visited.insert(current.node);                    // Marked visited.
+        visited.insert(current.node);
 
         for(const auto& edge : adjlist.at(current.node)){
             if(visited.count(edge.targetNode) == 1){
@@ -288,11 +275,10 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
     }
 
-    PathResult result;                               // Output: best known path from start to destination and its distance.
+    PathResult result;
 
-    std::unordered_map<graph::NodeID, graph::Weight> distances;                 
-    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;        //min-priority Queue.
-    // <Node ID, Parent ID>
+    std::unordered_map<graph::NodeID, graph::Weight> distances;                 // filled lazily: no entry = not reached yet
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;
     std::unordered_map<graph::NodeID, graph::NodeID> parentOf;
 
     distances[start] = 0;
@@ -301,10 +287,11 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
 
 
     while(!pq.empty()){
-        auto current = pq.top();                               // Getting the closest node from the queue.
-        pq.pop();                                                       // Removing it from the queue.
-        result.numberOfExploredNodes++;
+        auto current = pq.top();
+        pq.pop();
+        result.numberOfExploredNodes++;                 // counts every pop, outdated entries included
 
+        // outdated entry: a shorter route was found after it was queued
         if (current.priority > distances[current.node]) continue;
 
         if(current.node == destination){
@@ -322,6 +309,7 @@ graph::PathResult graph::path_dijkstra(graph::NodeID start, graph::NodeID destin
 
         for(const auto& edge : adjlist.at(current.node)){
             graph::Weight newDistance = distances[current.node] + edge.weight;  
+            // not reached yet: [] would insert 0, so insert "unreachable" explicitly
             if(distances.count(edge.targetNode) == 0){
                 distances[edge.targetNode] = graph::unreachable;
             }
@@ -344,12 +332,11 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
     if(adjlist.count(destination) == 0){
         throw std::invalid_argument("No Node in graph with ID: " + std::to_string(destination));
     }
-    PathResult result;                               // Output: best known path from start to destination and its distance.
+    PathResult result;
 
-    std::unordered_map<graph::NodeID, graph::Weight> distances;              // This is the g(n).
+    std::unordered_map<graph::NodeID, graph::Weight> distances;              // g(n), filled lazily: no entry = not reached yet
 
-    // Min-priority queue of QueueEntry objects. Where f(n) = g(n) + h(n), 
-    // g(n) is the cost from start to current node and h(n) is the estimate from current node to the destination.
+    // ordered by f(n) = g(n) + h(n)
     std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> pq;
 
     std::unordered_map<graph::NodeID, graph::NodeID> parentOf;
@@ -361,8 +348,9 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
     while(!pq.empty()){
         auto current = pq.top();
         pq.pop();
-        result.numberOfExploredNodes++;
+        result.numberOfExploredNodes++;                 // counts every pop, outdated entries included
 
+        // outdated entry (f is recomputed, so the heuristic must return the same value every time)
         graph::Weight currentF = distances[current.node] + heuristic(current.node);
         if (current.priority > currentF) continue;
 
@@ -380,6 +368,7 @@ graph::PathResult graph::path_astar(graph::NodeID start, graph::NodeID destinati
 
         for(const auto& edge : adjlist.at(current.node)){
             graph::Weight newDistance = distances[current.node] + edge.weight;
+            // not reached yet: [] would insert 0, so insert "unreachable" explicitly
             if(distances.count(edge.targetNode) == 0){
                 distances[edge.targetNode] = graph::unreachable;
             }
