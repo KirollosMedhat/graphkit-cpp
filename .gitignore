@@ -1,5 +1,8 @@
 build/
-vcpkg_installed/
 *.exe
 *.dot
-*.png
+/*.png
+!docs/*.png
+!docs/*.dot
+.vscode/
+.cache/
