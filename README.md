@@ -119,7 +119,7 @@ This builds four programs in `build/`:
 Timings are only meaningful in an optimized build. Configure with `-DCMAKE_BUILD_TYPE=Release` before running the benchmarks.
 
 ## Tests
-The tests are in `tests/test_graph.cpp`. They use plain `assert` and cover Dijkstra, A*, DFS and BFS: routes, distances, visit order, unreachable nodes, isolated nodes (`add_node`), the exceptions for missing nodes and invalid weights, negative node IDs, one-way edges and different costs in each direction, edges that can be walked in both directions, the `numberOfExploredNodes` counts, and edge cases (start equal to destination, zero-weight edges, duplicate edges, self-loops). `export_dot` has no automated test yet.
+The tests are in `tests/test_graph.cpp`. They use plain `assert` and cover Dijkstra, A*, DFS and BFS: routes, distances, visit order, unreachable nodes, isolated nodes (`add_node`), the exceptions for missing nodes and invalid weights, negative node IDs, one-way edges and different costs in each direction, edges that can be walked in both directions, the `numberOfExploredNodes` counts, and edge cases (start equal to destination, zero-weight edges, duplicate edges, self-loops).
 ```
 cmake --build build --target Tests
 ./build/Tests          # on Windows: build\Tests.exe
